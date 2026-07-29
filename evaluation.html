@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluating Dark Pattern Taxonomies in AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 40px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 64px;
+    border-bottom: 3px solid #000;
+    padding-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  header .lead {
+    font-size: 16px;
+    color: #555;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-label {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 8px;
+  }
+
+  .section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .section-intro {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 24px;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #555;
+    padding: 10px 12px;
+    border-bottom: 2px solid #000;
+    vertical-align: bottom;
+  }
+
+  table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  table tr:hover td {
+    background: #fafafa;
+  }
+
+  table th.rotate {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    height: 120px;
+    padding: 8px 4px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  table th.center, table td.center {
+    text-align: center;
+  }
+
+  .mono {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  /* Dot indicators */
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+  }
+
+  .dot.full {
+    background: #000;
+  }
+
+  .dot.partial {
+    background: #bbb;
+  }
+
+  .dot.empty {
+    background: #eee;
+  }
+
+  .dot.gap {
+    background: #fff;
+    border: 1.5px solid #c23b22;
+  }
+
+  /* Strength meter */
+  .strength {
+    display: flex;
+    gap: 2px;
+  }
+
+  .strength-bar {
+    width: 6px;
+    height: 16px;
+    background: #eee;
+  }
+
+  .strength-bar.filled {
+    background: #000;
+  }
+
+  /* Gap highlight */
+  .gap-row td {
+    background: #fff8f6 !important;
+  }
+
+  .gap-row td:first-child {
+    border-left: 3px solid #c23b22;
+  }
+
+  .gap-tag {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #c23b22;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .opp-tag {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #0e8a63;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid;
+    gap: 1px;
+    background: #ddd;
+    border: 1px solid #ddd;
+  }
+
+  .heatmap-cell {
+    padding: 8px;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .heatmap-header {
+    background: #f5f5f5;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    padding: 10px 8px;
+  }
+
+  .heatmap-row-header {
+    background: #f5f5f5;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: left;
+    padding: 10px 12px;
+  }
+
+  .heat-0 { background: #fff; color: #ccc; }
+  .heat-1 { background: #f5f5f5; color: #999; }
+  .heat-2 { background: #e8e8e8; color: #666; }
+  .heat-3 { background: #d0d0d0; color: #333; }
+  .heat-4 { background: #aaa; color: #fff; }
+  .heat-5 { background: #666; color: #fff; }
+  .heat-6 { background: #333; color: #fff; }
+  .heat-7 { background: #000; color: #fff; }
+
+  /* Opportunity cards */
+  .opp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .opp-card {
+    border: 1px solid #ddd;
+    padding: 24px;
+  }
+
+  .opp-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .opp-card .priority {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .opp-card .priority.high { color: #c23b22; }
+  .opp-card .priority.medium { color: #d4930d; }
+
+  .opp-card p {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .opp-card .evidence {
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* Bar charts */
+  .bar-chart {
+    margin-bottom: 8px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .bar-label {
+    width: 220px;
+    font-size: 12px;
+    text-align: right;
+    padding-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 14px;
+    background: #f0f0f0;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: #000;
+    transition: width 0.8s ease-out;
+  }
+
+  .bar-val {
+    width: 60px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #999;
+    padding-left: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Annotation */
+  .annotation {
+    font-size: 12px;
+    color: #777;
+    font-style: italic;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .callout {
+    background: #f5f5f5;
+    border-left: 3px solid #000;
+    padding: 16px 20px;
+    margin: 24px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .callout strong {
+    font-weight: 700;
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 48px 0;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 2px solid #000;
+    padding-top: 24px;
+    margin-top: 64px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page { padding: 32px 20px; }
+    .opp-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 24px; }
+    table { font-size: 11px; }
+    .bar-label { width: 140px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<header>
+  <h1>Evaluating Dark Pattern Taxonomies<br>in Generative AI</h1>
+  <p class="lead">A critical analysis of 10 classification frameworks. Where they converge, where they contradict, what they miss, and where opportunities exist for new contributions to the field.</p>
+</header>
+
+<!-- ================================================== -->
+<!-- 1. TAXONOMY COMPARISON -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">01 &mdash; Comparison</div>
+  <h2>Taxonomy Profiles</h2>
+  <p class="section-intro">Each taxonomy evaluated on three dimensions using the rubrics defined below. Scores are qualitative assessments derived from each paper's stated methodology, data sources, scope, and classification structure. They reflect relative positioning within this corpus, not absolute quality.</p>
+
+  <!-- RUBRIC TABLE -->
+  <h3 style="font-size:15px; font-weight:700; margin-bottom:16px; margin-top:32px;">Scoring Rubrics</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:60px">Score</th>
+        <th>Empirical Grounding</th>
+        <th>AI-Specificity</th>
+        <th>Granularity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono" style="font-weight:700">0 / 5</td>
+        <td>Purely theoretical; no data collection of any kind</td>
+        <td>Pre-dates AI context entirely; no AI consideration in scope or categories</td>
+        <td>No formal classification hierarchy; concepts listed without structure</td>
+      </tr>
+      <tr>
+        <td class="mono" style="font-weight:700">1 / 5</td>
+        <td>Expert or practitioner observation without systematic method; anecdotal evidence base</td>
+        <td>Acknowledges AI may be relevant but categories were not designed for AI; patterns could be retrofitted</td>
+        <td>Flat single-level list with fewer than 10 types; brief or no definitions</td>
+      </tr>
+      <tr>
+        <td class="mono" style="font-weight:700">2 / 5</td>
+        <td>Regulatory review, case-based analysis, or small qualitative study with documented examples but no systematic sampling</td>
+        <td>Some categories are partially applicable to AI contexts (e.g., "sneaking" can occur in AI-generated output) but framework does not address this</td>
+        <td>Single-level list with 10+ types OR two levels with minimal subcategories; includes definitions</td>
+      </tr>
+      <tr>
+        <td class="mono" style="font-weight:700">3 / 5</td>
+        <td>Systematic method (structured benchmark, controlled evaluation, or structured expert review) with moderate dataset (n < 500)</td>
+        <td>Explicitly discusses AI context; some categories directly address AI-specific behaviors; acknowledges that AI changes the nature of dark patterns</td>
+        <td>Two clear hierarchical levels with meaningful subcategories; includes definitions and some examples for each type</td>
+      </tr>
+      <tr>
+        <td class="mono" style="font-weight:700">4 / 5</td>
+        <td>Rigorous qualitative coding with inter-rater reliability OR systematic literature review with external validation (survey, expert panel)</td>
+        <td>Primarily focused on AI/LLM interactions; majority of categories are AI-relevant; framework motivated by AI-specific problems</td>
+        <td>Three hierarchical levels with definitional syntax at each level; includes examples, cross-references, and distinguishing criteria</td>
+      </tr>
+      <tr>
+        <td class="mono" style="font-weight:700">5 / 5</td>
+        <td>Large-scale quantitative data collection (n > 1,000) with statistical analysis, or validated SLR with multi-method triangulation</td>
+        <td>Built exclusively for LLM/GenAI evaluation; all categories are AI-native with no legacy UI-based categories (e.g., sycophancy, anthropomorphism, brand bias)</td>
+        <td>Three+ levels with formal definitional templates, examples, scenario mapping, severity ratings, and cross-taxonomy resolution at each level</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- MAIN COMPARISON TABLE -->
+  <h3 style="font-size:15px; font-weight:700; margin-bottom:16px; margin-top:40px;">Scored Comparison</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">Taxonomy</th>
+        <th style="width:44px">Year</th>
+        <th style="width:50px">Types</th>
+        <th>Method</th>
+        <th style="width:75px">Empirical</th>
+        <th style="width:75px">AI-Spec.</th>
+        <th style="width:75px">Granul.</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Brignull</strong></td>
+        <td class="mono">2010</td>
+        <td class="mono">12</td>
+        <td>Practitioner observation</td>
+        <td class="mono center">2</td>
+        <td class="mono center">0</td>
+        <td class="mono center">2</td>
+      </tr>
+      <tr>
+        <td><strong>Bosch et al.</strong></td>
+        <td class="mono">2016</td>
+        <td class="mono">8</td>
+        <td>Theoretical (anti-privacy)</td>
+        <td class="mono center">1</td>
+        <td class="mono center">0</td>
+        <td class="mono center">1</td>
+      </tr>
+      <tr>
+        <td><strong>Gray et al.</strong></td>
+        <td class="mono">2018</td>
+        <td class="mono">5</td>
+        <td>Qualitative coding (in-the-wild)</td>
+        <td class="mono center">4</td>
+        <td class="mono center">0</td>
+        <td class="mono center">1</td>
+      </tr>
+      <tr>
+        <td><strong>Mathur et al.</strong></td>
+        <td class="mono">2019</td>
+        <td class="mono">5</td>
+        <td>Large-scale automated crawl</td>
+        <td class="mono center">5</td>
+        <td class="mono center">0</td>
+        <td class="mono center">2</td>
+      </tr>
+      <tr>
+        <td><strong>EDPB</strong></td>
+        <td class="mono">2022</td>
+        <td class="mono">5+13</td>
+        <td>Regulatory guidance</td>
+        <td class="mono center">2</td>
+        <td class="mono center">1</td>
+        <td class="mono center">3</td>
+      </tr>
+      <tr>
+        <td><strong>FTC</strong></td>
+        <td class="mono">2022</td>
+        <td class="mono">8</td>
+        <td>Enforcement case review</td>
+        <td class="mono center">3</td>
+        <td class="mono center">0</td>
+        <td class="mono center">2</td>
+      </tr>
+      <tr>
+        <td><strong>Gray et al. Ontology</strong></td>
+        <td class="mono">2024</td>
+        <td class="mono">65</td>
+        <td>Synthesis of 10 taxonomies</td>
+        <td class="mono center">4</td>
+        <td class="mono center">1</td>
+        <td class="mono center">5</td>
+      </tr>
+      <tr>
+        <td><strong>Li et al. DPAF</strong></td>
+        <td class="mono">2024</td>
+        <td class="mono">68</td>
+        <td>113-paper SLR + survey (n=176)</td>
+        <td class="mono center">5</td>
+        <td class="mono center">1</td>
+        <td class="mono center">5</td>
+      </tr>
+      <tr>
+        <td><strong>DarkBench (Kran)</strong></td>
+        <td class="mono">2025</td>
+        <td class="mono">6</td>
+        <td>LLM benchmark evaluation</td>
+        <td class="mono center">3</td>
+        <td class="mono center">5</td>
+        <td class="mono center">1</td>
+      </tr>
+      <tr>
+        <td><strong>Asif LLM</strong></td>
+        <td class="mono">2025</td>
+        <td class="mono">7</td>
+        <td>Curated prompt set (n=401)</td>
+        <td class="mono center">3</td>
+        <td class="mono center">5</td>
+        <td class="mono center">2</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- JUSTIFICATION TABLE -->
+  <h3 style="font-size:15px; font-weight:700; margin-bottom:16px; margin-top:40px;">Score Justifications</h3>
+  <p class="section-intro" style="margin-bottom:16px">Detailed rationale for each score, citing the specific evidence from each paper that determined its rating.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:140px">Taxonomy</th>
+        <th>Empirical Grounding</th>
+        <th>AI-Specificity</th>
+        <th>Granularity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Brignull (2010)</strong></td>
+        <td><span class="mono" style="font-weight:700">2.</span> Based on practitioner observation from running deceptive.design (originally darkpatterns.org). Patterns identified through personal expertise and crowdsourced submissions, not systematic data collection. Widely cited but not derived from controlled methodology.</td>
+        <td><span class="mono" style="font-weight:700">0.</span> Published in 2010, exclusively addresses web interface deception. No consideration of AI, algorithmic, or conversational patterns. Categories (Trick Questions, Roach Motel) are entirely UI-element-based.</td>
+        <td><span class="mono" style="font-weight:700">2.</span> 12 named types in a flat list. Each has a short definition and representative example. No subcategories or hierarchical structure. Patterns are described individually without formal relationships between them.</td>
+      </tr>
+      <tr>
+        <td><strong>Bosch et al. (2016)</strong></td>
+        <td><span class="mono" style="font-weight:700">1.</span> Purely theoretical framework inverting Hoepman's privacy-by-design strategies. No empirical data collection; derived through logical negation of existing design principles. No validation study.</td>
+        <td><span class="mono" style="font-weight:700">0.</span> Addresses privacy design strategies, not AI. Categories (Maximize, Publish, Centralize) describe system-level privacy decisions. Predates the AI dark pattern conversation entirely.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> 8 "dark strategies" in a flat list. Each is a one-word label with a brief description. No subcategories, no examples of specific implementations, no detection criteria.</td>
+      </tr>
+      <tr>
+        <td><strong>Gray et al. (2018)</strong></td>
+        <td><span class="mono" style="font-weight:700">4.</span> Qualitative content analysis of dark pattern instances observed "in the wild." Uses established HCI qualitative coding methods. Became the most widely adopted framework in subsequent literature. Lacks large-scale quantitative validation, preventing a score of 5.</td>
+        <td><span class="mono" style="font-weight:700">0.</span> Published 2018, focused entirely on web and mobile UI. Categories (Nagging, Obstruction, Sneaking, Interface Interference, Forced Action) describe visual/interactive interface behaviors. No AI dimension.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> 5 high-level strategy categories only. No meso-level or low-level subcategories in the 2018 paper. Individual patterns from Brignull are discussed as instances but not formally structured into sub-levels.</td>
+      </tr>
+      <tr>
+        <td><strong>Mathur et al. (2019)</strong></td>
+        <td><span class="mono" style="font-weight:700">5.</span> Automated web crawl of 11,000 shopping websites with statistical analysis of dark pattern prevalence. Largest empirical dataset in the corpus. Quantified pattern frequency across sites. Includes reproducible methodology.</td>
+        <td><span class="mono" style="font-weight:700">0.</span> E-commerce web interface only. Categories (Asymmetric, Covert, Deceptive, Obstructive, Restrictive) describe static web page manipulation. No consideration of algorithmic or AI-generated content.</td>
+        <td><span class="mono" style="font-weight:700">2.</span> 5 high-level effect categories. Maps Brignull's 16 types into these categories, creating a partial two-level mapping. Includes cognitive bias annotations per pattern. No formal subcategory hierarchy.</td>
+      </tr>
+      <tr>
+        <td><strong>EDPB (2022)</strong></td>
+        <td><span class="mono" style="font-weight:700">2.</span> European Data Protection Board regulatory guidelines. Based on expert review of existing platforms and complaint patterns, not systematic empirical study. Represents regulatory consensus rather than research evidence.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> Focused on social media data protection interfaces. Does not address AI directly, but category "Skipping" (Hidden in Plain Sight) can be retroactively applied to AI consent flows. No explicit AI scope.</td>
+        <td><span class="mono" style="font-weight:700">3.</span> Two clear levels: 5 high-level categories (Overloading, Skipping, Hindering, Fickle, Left in the Dark) with 13 specific sub-patterns. Each sub-pattern has a definition and example. No third level.</td>
+      </tr>
+      <tr>
+        <td><strong>FTC (2022)</strong></td>
+        <td><span class="mono" style="font-weight:700">3.</span> Based on systematic review of FTC enforcement cases and industry complaints. Structured case-based analysis with documented examples from real companies. Not a research study but grounded in regulatory evidence.</td>
+        <td><span class="mono" style="font-weight:700">0.</span> Addresses digital commerce broadly. Categories derived from web and mobile enforcement cases. No AI-specific considerations or categories. Published before AI dark pattern discourse emerged.</td>
+        <td><span class="mono" style="font-weight:700">2.</span> 8 categories (Social Proof, Scarcity, Urgency, Obstruction, Sneaking, Interface Interference, Forced Action, Asymmetric Choice) with sub-examples. Single primary level with illustrative instances.</td>
+      </tr>
+      <tr>
+        <td><strong>Gray Ontology (2024)</strong></td>
+        <td><span class="mono" style="font-weight:700">4.</span> Rigorous synthesis harmonizing 10 existing taxonomies (academic + regulatory). Uses formal definitional syntax with inter-source cross-referencing. Published at CHI '24 (peer-reviewed). Not based on new primary data collection, preventing a 5.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> Mentions "Personalization" as a meso-level pattern under Social Engineering, acknowledging that algorithmic systems can enhance manipulation. But framework was built from pre-AI sources and categories remain interface-centric.</td>
+        <td><span class="mono" style="font-weight:700">5.</span> Formal 3-level hierarchy: 5 high-level strategies, 25 meso-level approaches, 35 low-level instantiations. Each level has explicit definitional templates. Cross-references to all 10 source taxonomies per pattern.</td>
+      </tr>
+      <tr>
+        <td><strong>Li et al. DPAF (2024)</strong></td>
+        <td><span class="mono" style="font-weight:700">5.</span> Systematic literature review of 113 papers with multi-method validation: expert coding + industry survey (n=176, 87%+ approval rate). Extends Gray Ontology with 24 new empirically documented patterns. Published at ACM FSE.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> Adds mobile and entertainment software patterns (Infinite Scrolling, Addictive Design) that are relevant to AI-powered apps, but taxonomy was not designed with AI-specific manipulation in mind. No categories for sycophancy, anthropomorphism, or other LLM behaviors.</td>
+        <td><span class="mono" style="font-weight:700">5.</span> 68 types across 6 categories and 32 subcategories in a 3-level hierarchy. Each pattern includes: definition, severity rating (H1-H6 harm scale), common scenario mapping, and instance availability. Most detailed framework in the corpus.</td>
+      </tr>
+      <tr>
+        <td><strong>DarkBench (Kran, 2025)</strong></td>
+        <td><span class="mono" style="font-weight:700">3.</span> Structured benchmark with systematic LLM evaluation methodology. Tests multiple models against curated prompts. Provides quantitative susceptibility scores. However, evaluates model outputs rather than real user interactions, limiting ecological validity.</td>
+        <td><span class="mono" style="font-weight:700">5.</span> Built exclusively for LLM dark pattern evaluation. All 6 categories are AI-native: Brand Bias, User Retention, Sycophancy, Anthropomorphism, Manipulative Content, Sneaking. No legacy UI categories included.</td>
+        <td><span class="mono" style="font-weight:700">1.</span> 6 high-level categories only. No subcategories, no meso/low-level decomposition. Each category has a brief description but no formal sub-classification of variants. The coarsest framework for AI-specific patterns.</td>
+      </tr>
+      <tr>
+        <td><strong>Asif LLM (2025)</strong></td>
+        <td><span class="mono" style="font-weight:700">3.</span> 401 curated prompt-response examples tested against multiple LLMs. Systematic categorization with quantitative analysis of safety filter evasion rates. Moderate dataset; evaluates model behavior rather than user experience in naturalistic settings.</td>
+        <td><span class="mono" style="font-weight:700">5.</span> Built exclusively for LLM manipulation analysis. All 7 categories describe AI-specific harm pathways. Key finding (autonomy-undermining content evades safety filters) is only observable in AI context. No legacy UI categories.</td>
+        <td><span class="mono" style="font-weight:700">2.</span> 7 harm categories (Psychological, Emotional, Autonomy, Social, Economic, Legal, Physical). No formal subcategories, though examples illustrate variety within each type. Single-level classification with definitions and representative examples.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="margin-top:24px">
+    <strong>Key observation:</strong> No single taxonomy scores high on all three dimensions. The most empirically rigorous frameworks (Mathur 5/5, Li 5/5) are not AI-specific (0&ndash;1/5). The most AI-specific frameworks (DarkBench 5/5, Asif 5/5) lack granularity (1&ndash;2/5). A framework that is simultaneously empirically grounded, AI-specific, and granular does not yet exist in the literature. This represents the central opportunity in the field.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- 2. COVERAGE HEATMAP -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">02 &mdash; Coverage</div>
+  <h2>What Each Taxonomy Sees (and Misses)</h2>
+  <p class="section-intro">Mapping 10 taxonomies against 12 analytical dimensions. Darker = stronger coverage. White cells reveal blind spots. Read the columns to see where the field has consensus; read the rows to see each taxonomy's limitations.</p>
+
+  <div class="heatmap-grid" style="grid-template-columns: 180px repeat(12, 1fr);">
+    <!-- Header row -->
+    <div class="heatmap-cell heatmap-header"></div>
+    <div class="heatmap-cell heatmap-header">Visual UI</div>
+    <div class="heatmap-cell heatmap-header">Voice UI</div>
+    <div class="heatmap-cell heatmap-header">Conver&shy;sational AI</div>
+    <div class="heatmap-cell heatmap-header">Recom&shy;mender AI</div>
+    <div class="heatmap-cell heatmap-header">Cognitive Bias</div>
+    <div class="heatmap-cell heatmap-header">Emotional Process</div>
+    <div class="heatmap-cell heatmap-header">User Autonomy</div>
+    <div class="heatmap-cell heatmap-header">Vulner&shy;able Pops</div>
+    <div class="heatmap-cell heatmap-header">Temporal / Adaptive</div>
+    <div class="heatmap-cell heatmap-header">Multi&shy;modal</div>
+    <div class="heatmap-cell heatmap-header">User Study Validated</div>
+    <div class="heatmap-cell heatmap-header">Regula&shy;tory Mapped</div>
+
+    <!-- Brignull -->
+    <div class="heatmap-cell heatmap-row-header">Brignull '10</div>
+    <div class="heatmap-cell heat-6">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- Gray 2018 -->
+    <div class="heatmap-cell heatmap-row-header">Gray '18</div>
+    <div class="heatmap-cell heat-6">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- Mathur 2019 -->
+    <div class="heatmap-cell heatmap-row-header">Mathur '19</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- EDPB -->
+    <div class="heatmap-cell heatmap-row-header">EDPB '22</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-7">Full</div>
+
+    <!-- Gray Ontology 2024 -->
+    <div class="heatmap-cell heatmap-row-header">Gray Ontology '24</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-6">High</div>
+
+    <!-- Li DPAF -->
+    <div class="heatmap-cell heatmap-row-header">Li DPAF '24</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-3">Med</div>
+
+    <!-- Song & Yun Voice -->
+    <div class="heatmap-cell heatmap-row-header">Song & Yun '25</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- DarkBench -->
+    <div class="heatmap-cell heatmap-row-header">DarkBench '25</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-7">Full</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- Asif -->
+    <div class="heatmap-cell heatmap-row-header">Asif LLM '25</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-6">High</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-5">High</div>
+    <div class="heatmap-cell heat-6">High</div>
+    <div class="heatmap-cell heat-2">Low</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+
+    <!-- Kitkowska -->
+    <div class="heatmap-cell heatmap-row-header">Kitkowska '24</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-3">Med</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-4">Med+</div>
+    <div class="heatmap-cell heat-6">High</div>
+    <div class="heatmap-cell heat-1">Low</div>
+    <div class="heatmap-cell heat-0">&mdash;</div>
+    <div class="heatmap-cell heat-1">Low</div>
+  </div>
+
+  <p class="annotation">Coverage assessed qualitatively from each paper's scope, methodology, and pattern definitions. "Full" = primary focus with empirical validation. "&mdash;" = not addressed.</p>
+
+  <div class="callout">
+    <strong>The white columns tell the story.</strong> Voice UI, multimodal interaction, temporal/adaptive patterns, and vulnerable populations are consistently uncovered. Only 1/10 taxonomies addresses voice. Zero taxonomies address multimodal dark patterns (e.g., visual + voice + haptic). Only Kitkowska theorizes adaptive patterns, and no one has empirically validated them.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- 3. CONTRADICTION ANALYSIS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">03 &mdash; Contradictions</div>
+  <h2>Where Taxonomies Disagree</h2>
+  <p class="section-intro">Points of tension in how the field classifies the same phenomena. These contradictions signal conceptual instability -- fertile ground for clarifying contributions.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:180px">Disagreement</th>
+        <th>Position A</th>
+        <th>Position B</th>
+        <th style="width:140px">Implication</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Is Nagging a strategy or a tactic?</strong></td>
+        <td>Gray '18: Nagging is a top-level strategy, parallel to Obstruction and Sneaking</td>
+        <td>Gray Ontology '24: Nagging demoted to meso-level under Forced Action. Li '24 keeps it top-level.</td>
+        <td><span class="gap-tag">Unstable</span></td>
+      </tr>
+      <tr>
+        <td><strong>What axis is primary?</strong></td>
+        <td>Gray, Li, EDPB: Classify by mechanism (HOW it manipulates)</td>
+        <td>Asif, Mathur: Classify by effect/harm (WHAT it does to the user)</td>
+        <td><span class="gap-tag">Unresolved</span></td>
+      </tr>
+      <tr>
+        <td><strong>Is sycophancy a dark pattern?</strong></td>
+        <td>DarkBench, Nguyen: Yes -- it's a manipulative AI behavior that reinforces misinformation</td>
+        <td>Traditional taxonomies: No category exists for behaviors that feel helpful but cause harm through agreement</td>
+        <td><span class="opp-tag">Opportunity</span></td>
+      </tr>
+      <tr>
+        <td><strong>Where does emotional manipulation sit?</strong></td>
+        <td>Gray: Under Interface Interference (a UI technique)</td>
+        <td>Asif: It's a harm type. DarkBench: It's an AI behavior (anthropomorphism).</td>
+        <td><span class="gap-tag">Fragmented</span></td>
+      </tr>
+      <tr>
+        <td><strong>Are AI dark patterns new types or old types in new modalities?</strong></td>
+        <td>Kitkowska: They are "hyper-dark" versions of existing patterns, enhanced by personalization</td>
+        <td>DarkBench: Brand bias, sycophancy, anthropomorphism are genuinely novel categories</td>
+        <td><span class="opp-tag">Opportunity</span></td>
+      </tr>
+      <tr>
+        <td><strong>Is confirmshaming social engineering or interface interference?</strong></td>
+        <td>Gray Ontology: Social Engineering > Shaming</td>
+        <td>Mathur: Asymmetric (interface-level). Song & Yun: Emotional manipulation via anthropomorphism.</td>
+        <td><span class="gap-tag">Unstable</span></td>
+      </tr>
+      <tr>
+        <td><strong>Should the unit of analysis be the interface element or the user experience?</strong></td>
+        <td>Gray, Brignull, Li: Pattern = a specific UI/interaction element</td>
+        <td>Asif, Cunningham: Pattern = a harm trajectory experienced by the user across time</td>
+        <td><span class="opp-tag">Opportunity</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ================================================== -->
+<!-- 4. METHODOLOGICAL GAPS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">04 &mdash; Methodology</div>
+  <h2>How Taxonomies Were Built</h2>
+  <p class="section-intro">The evidence base behind each framework. Bars show sample size relative to the largest empirical study in the corpus (Mathur, n=11,000).</p>
+
+  <div class="bar-chart">
+    <div class="bar-row">
+      <div class="bar-label">Mathur '19 (web crawl)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+      <div class="bar-val">n=11,000</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Di Geronimo '20 (app audit)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:22%"></div></div>
+      <div class="bar-val">n=240</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Li '24 (paper review)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:1%"></div></div>
+      <div class="bar-val">113 papers</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Li '24 (survey validation)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:1.6%"></div></div>
+      <div class="bar-val">n=176</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Asif '25 (prompt set)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:3.6%"></div></div>
+      <div class="bar-val">n=401</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Tang '25 (GUI agent study)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:3.5%"></div></div>
+      <div class="bar-val">n=392</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Song & Yun '25 (voice exp.)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0.8%"></div></div>
+      <div class="bar-val">n~90</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Gray '18 (qualitative)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0.02%"></div></div>
+      <div class="bar-val">qual.</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Brignull '10 (practitioner)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0.02%"></div></div>
+      <div class="bar-val">expert</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Kitkowska '24 (theoretical)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0.02%"></div></div>
+      <div class="bar-val">theory</div>
+    </div>
+  </div>
+
+  <table style="margin-top:24px">
+    <thead>
+      <tr>
+        <th style="width:160px">Methodology</th>
+        <th>Used By</th>
+        <th style="width:100px">Count</th>
+        <th>Limitation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Literature synthesis</strong></td>
+        <td>Gray Ontology, Li DPAF, Cunningham</td>
+        <td class="mono">3/10</td>
+        <td>Inherits biases of source material; no new empirical observation</td>
+      </tr>
+      <tr>
+        <td><strong>Large-scale automated</strong></td>
+        <td>Mathur (web crawl)</td>
+        <td class="mono">1/10</td>
+        <td>Only captures machine-detectable patterns; misses conversational manipulation</td>
+      </tr>
+      <tr>
+        <td><strong>User study / experiment</strong></td>
+        <td>Song & Yun, Tang</td>
+        <td class="mono">2/10</td>
+        <td>Small samples, controlled settings, WEIRD populations</td>
+      </tr>
+      <tr>
+        <td><strong>LLM benchmark</strong></td>
+        <td>DarkBench, Asif</td>
+        <td class="mono">2/10</td>
+        <td>Tests model outputs, not user experiences; no ecological validity</td>
+      </tr>
+      <tr>
+        <td><strong>Regulatory/expert review</strong></td>
+        <td>EDPB, FTC, Brignull, Bosch</td>
+        <td class="mono">4/10</td>
+        <td>Practitioner bias; patterns that haven't been reported are invisible</td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Longitudinal / in-situ</strong></td>
+        <td>&mdash;</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Gap</span> &mdash; No taxonomy is derived from tracking user experiences over time in natural settings</td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Vulnerable population study</strong></td>
+        <td>&mdash;</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Gap</span> &mdash; No taxonomy is derived from direct study of vulnerable users interacting with AI dark patterns</td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Cross-cultural / non-English</strong></td>
+        <td>&mdash;</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Gap</span> &mdash; All taxonomies built from English-language, Western contexts</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ================================================== -->
+<!-- 5. DIMENSION GAPS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">05 &mdash; Blind Spots</div>
+  <h2>What the Field Is Not Measuring</h2>
+  <p class="section-intro">Dimensions that are absent or severely underrepresented across all 10 taxonomies. Each represents a potential axis for a new or extended classification framework.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:200px">Missing Dimension</th>
+        <th>What It Would Capture</th>
+        <th style="width:90px">Coverage</th>
+        <th style="width:100px">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="gap-row">
+        <td><strong>Temporality</strong></td>
+        <td>How patterns evolve across a user's session, week, or relationship with a system. A chatbot that is helpful at first, then gradually becomes manipulative, is invisible to snapshot-based taxonomies.</td>
+        <td class="mono">1/10</td>
+        <td><span class="gap-tag">Critical gap</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Adaptivity</strong></td>
+        <td>Whether patterns change based on user behavior. Kitkowska theorizes "hyper-dark patterns" but no empirical work exists classifying adaptive manipulation in the wild.</td>
+        <td class="mono">1/10</td>
+        <td><span class="gap-tag">Critical gap</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Multimodal interaction</strong></td>
+        <td>Patterns that operate across visual + voice + text + haptic modalities simultaneously. Song & Yun address voice alone; no taxonomy addresses combined modalities.</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Absent</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>User emotional state trajectory</strong></td>
+        <td>How the user's emotional and cognitive state changes through an interaction. Current taxonomies classify the pattern's intent, not the user's lived experience of it.</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Absent</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Cumulative / compounding effects</strong></td>
+        <td>How multiple patterns interact when deployed together. Individually mild patterns (nagging + bad defaults + confirmshaming) may compound into severe harm.</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Absent</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Differential vulnerability</strong></td>
+        <td>How the same pattern affects different populations differently. Chu et al. identify ageism; Cunningham maps 8 groups. But no taxonomy uses vulnerability as a classification axis.</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Absent</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Awareness / consent gradient</strong></td>
+        <td>The degree to which users recognize they are being manipulated. Ranges from fully covert (user never knows) to plausibly deniable to openly aggressive. Only Mathur's "covert" category touches this.</td>
+        <td class="mono">1/10</td>
+        <td><span class="gap-tag">Critical gap</span></td>
+      </tr>
+      <tr class="gap-row">
+        <td><strong>Reversibility</strong></td>
+        <td>Whether the harm caused by a pattern can be undone. Economic harm from a hidden charge is reversible (refund). Emotional dependency on an AI companion may not be. No taxonomy distinguishes these.</td>
+        <td class="mono">0/10</td>
+        <td><span class="gap-tag">Absent</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ================================================== -->
+<!-- 6. CONSENSUS PATTERNS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">06 &mdash; Consensus</div>
+  <h2>Where the Field Agrees</h2>
+  <p class="section-intro">Patterns with the highest cross-taxonomy coverage represent established knowledge. Patterns with low coverage but high AI-relevance represent emerging frontiers.</p>
+
+  <div class="bar-chart" style="margin-bottom:32px">
+    <div class="bar-row"><div class="bar-label" style="font-weight:600;color:#555;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">ESTABLISHED (7+ taxonomies)</div><div class="bar-track" style="background:transparent"></div><div class="bar-val"></div></div>
+    <div class="bar-row"><div class="bar-label">Obstruction / Roach Motel</div><div class="bar-track"><div class="bar-fill" style="width:88.9%"></div></div><div class="bar-val">8 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Hidden Costs / Drip Pricing</div><div class="bar-track"><div class="bar-fill" style="width:77.8%"></div></div><div class="bar-val">7 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Sneaking / Hidden Information</div><div class="bar-track"><div class="bar-fill" style="width:77.8%"></div></div><div class="bar-val">7 / 9</div></div>
+
+    <div class="bar-row" style="margin-top:16px"><div class="bar-label" style="font-weight:600;color:#555;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">CONVERGENT (5&ndash;6 taxonomies)</div><div class="bar-track" style="background:transparent"></div><div class="bar-val"></div></div>
+    <div class="bar-row"><div class="bar-label">Confirmshaming</div><div class="bar-track"><div class="bar-fill" style="width:66.7%"></div></div><div class="bar-val">6 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Emotional Manipulation</div><div class="bar-track"><div class="bar-fill" style="width:66.7%"></div></div><div class="bar-val">6 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Interface Interference</div><div class="bar-track"><div class="bar-fill" style="width:66.7%"></div></div><div class="bar-val">6 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Nagging</div><div class="bar-track"><div class="bar-fill" style="width:55.6%"></div></div><div class="bar-val">5 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Forced Continuity</div><div class="bar-track"><div class="bar-fill" style="width:55.6%"></div></div><div class="bar-val">5 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Bad Defaults</div><div class="bar-track"><div class="bar-fill" style="width:55.6%"></div></div><div class="bar-val">5 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Trick Questions</div><div class="bar-track"><div class="bar-fill" style="width:55.6%"></div></div><div class="bar-val">5 / 9</div></div>
+
+    <div class="bar-row" style="margin-top:16px"><div class="bar-label" style="font-weight:600;color:#555;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">EMERGING AI-SPECIFIC (1&ndash;2 taxonomies)</div><div class="bar-track" style="background:transparent"></div><div class="bar-val"></div></div>
+    <div class="bar-row"><div class="bar-label">Sycophancy</div><div class="bar-track"><div class="bar-fill" style="width:22.2%;background:#999"></div></div><div class="bar-val">2 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Anthropomorphism</div><div class="bar-track"><div class="bar-fill" style="width:22.2%;background:#999"></div></div><div class="bar-val">2 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">User Retention</div><div class="bar-track"><div class="bar-fill" style="width:22.2%;background:#999"></div></div><div class="bar-val">2 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Brand Bias</div><div class="bar-track"><div class="bar-fill" style="width:11.1%;background:#999"></div></div><div class="bar-val">1 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Hallucinated Sources</div><div class="bar-track"><div class="bar-fill" style="width:11.1%;background:#999"></div></div><div class="bar-val">1 / 9</div></div>
+    <div class="bar-row"><div class="bar-label">Automation Bias</div><div class="bar-track"><div class="bar-fill" style="width:11.1%;background:#999"></div></div><div class="bar-val">1 / 9</div></div>
+  </div>
+
+  <div class="callout">
+    <strong>The gray bars at the bottom are where your contribution matters most.</strong> Sycophancy, anthropomorphism, brand bias, hallucinated sources, and automation bias are recognized by only 1&ndash;2 frameworks. They have no established sub-classification, no empirical grounding with real users, and no cross-cultural validation. Any rigorous empirical work on these patterns would be a first-of-its-kind contribution.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- 7. RESEARCH OPPORTUNITIES -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">07 &mdash; Opportunities</div>
+  <h2>Research Contribution Opportunities</h2>
+  <p class="section-intro">Specific gaps where new work would advance the field, derived from the evaluation above. Ordered by estimated impact and feasibility.</p>
+
+  <div class="opp-grid">
+    <div class="opp-card">
+      <h3>A Taxonomy Grounded in Vulnerable User Experience</h3>
+      <div class="priority high">High priority &mdash; No existing work</div>
+      <p>Every existing taxonomy classifies patterns from the designer's or system's perspective (what the pattern does). No taxonomy has been built from the ground up based on how vulnerable users actually experience and describe manipulation in AI interactions. An empirical, user-centered taxonomy using methods like diary studies or contextual inquiry with vulnerable populations would be a foundational contribution.</p>
+      <div class="evidence">Gap evidence: 0/10 taxonomies use vulnerable population data. 0/10 use longitudinal methods. Cunningham identifies 8 vulnerable groups but does not produce an empirical taxonomy from their experiences.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Temporal Dark Patterns in AI</h3>
+      <div class="priority high">High priority &mdash; Theorized but unvalidated</div>
+      <p>Classify patterns by how they unfold over time: immediate (one-shot), progressive (escalating over sessions), or relational (developing over weeks/months of AI companion use). Current taxonomies are snapshot-based and cannot capture how an AI chatbot gradually shifts from helpful to manipulative. This would directly address the "hyper-dark pattern" theory Kitkowska (2024) proposed but did not empirically test.</p>
+      <div class="evidence">Gap evidence: 1/10 taxonomies (Kitkowska) theorizes temporality. 0/10 provide empirical classification. The companion AI domain (Replika, Character.AI) is the natural test bed.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Reconciling Mechanism vs. Harm Axes</h3>
+      <div class="priority high">High priority &mdash; Active contradiction</div>
+      <p>The field is split between classifying by mechanism (Gray) and by harm (Asif). A dual-axis framework that maps mechanism-to-harm relationships would unify these approaches. Which mechanisms produce which harms? Are there many-to-many relationships? This would resolve the current fragmentation where emotional manipulation appears under three different categories depending on the taxonomy.</p>
+      <div class="evidence">Gap evidence: Contradiction identified in Section 03. Emotional manipulation classified as Interface Interference (Gray), Harm Type (Asif), and AI Behavior (DarkBench) simultaneously.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Multimodal Dark Pattern Classification</h3>
+      <div class="priority high">High priority &mdash; Completely absent</div>
+      <p>As AI systems become multimodal (voice + visual + text + haptic), dark patterns will operate across modalities simultaneously. A voice assistant showing a "helpful" visual while using a guilt-inducing tone while auto-adding items to a cart exploits three channels at once. No existing taxonomy can represent this. Song & Yun (2025) address voice alone; no work addresses cross-modal patterns.</p>
+      <div class="evidence">Gap evidence: 0/10 taxonomies address multimodal interaction. Only 1/10 addresses voice. Multimodal AI assistants (GPT-4o, Gemini Live) are already deployed.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Empirical Sub-Taxonomy of AI-Specific Patterns</h3>
+      <div class="priority medium">Medium priority &mdash; Partially started</div>
+      <p>DarkBench identifies 6 AI-specific categories but at very high granularity (no subcategories). An empirical study that decomposes sycophancy, anthropomorphism, and brand bias into specific, detectable sub-patterns (like Gray's meso/low-level approach) would fill the gap between "we know these exist" and "we can systematically detect them."</p>
+      <div class="evidence">Gap evidence: DarkBench and Asif provide high-level categories only. Gray Ontology provides 3-level granularity but not for AI-specific patterns. No framework bridges both.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Compounding Effects Framework</h3>
+      <div class="priority medium">Medium priority &mdash; Completely absent</div>
+      <p>Current taxonomies treat patterns as independent. In practice, systems deploy multiple patterns simultaneously (nagging + bad defaults + confirmshaming + urgency). A framework that classifies pattern combinations and their compounding effects on user harm would be novel. This parallels drug interaction research in medicine.</p>
+      <div class="evidence">Gap evidence: 0/10 taxonomies address pattern interactions. Di Geronimo found an average of 7 patterns per app, suggesting compounding is the norm, not the exception.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Cross-Cultural Dark Pattern Perception</h3>
+      <div class="priority medium">Medium priority &mdash; Completely absent</div>
+      <p>All 10 taxonomies were built from English-language, Western contexts. Confirmshaming may not function the same way in cultures with different relationships to shame. Social proof patterns may be more or less effective depending on collectivism/individualism. A cross-cultural study would test whether existing categories are universal or culturally contingent.</p>
+      <div class="evidence">Gap evidence: 0/10 taxonomies include cross-cultural data. Cunningham identifies Global South and linguistic minorities as vulnerable groups but provides no classification framework for cultural variation.</div>
+    </div>
+
+    <div class="opp-card">
+      <h3>Awareness/Consent Gradient Scale</h3>
+      <div class="priority medium">Medium priority &mdash; 1 partial precedent</div>
+      <p>Mathur's "covert" category and Leiser & Santos's "spectrum of visibility" suggest that patterns vary in detectability. A validated scale measuring user awareness of manipulation (fully covert &rarr; plausibly deniable &rarr; recognized but tolerated &rarr; actively resisted) would add a critical dimension to any taxonomy. This is especially relevant for AI patterns where the "soft manipulation" Asif identifies evades even safety filters.</p>
+      <div class="evidence">Gap evidence: Mathur provides one category ("covert"). Leiser & Santos sketch a spectrum but don't validate it. Asif finds that "soft manipulation" evades detection by both users and automated systems.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- 08. INTERACTIVE TAXONOMY EXPLORER -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-label">08 &mdash; Explorer</div>
+  <h2>Interactive Taxonomy Map</h2>
+  <p class="section-intro">Every dark pattern in the corpus, annotated with its source taxonomies, mechanism type, harm dimensions, AI-specificity, modality, and cognitive bias exploited. Toggle any characteristic to filter. Active filters combine with AND logic -- only patterns matching all active filters are shown. Use this to find intersections, gaps, and relationships across frameworks.</p>
+
+  <!-- Filter Controls -->
+  <div id="filterPanel" style="margin-bottom:32px;">
+    <div id="filterGroups"></div>
+    <div style="display:flex; align-items:center; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid #eee;">
+      <div style="font-family:Menlo,Consolas,monospace; font-size:13px;"><span id="matchCount" style="font-weight:700">0</span> / <span id="totalCount">0</span> patterns</div>
+      <button id="clearFilters" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; background:none; border:1px solid #ccc; padding:6px 14px; cursor:pointer; color:#555;">Clear All Filters</button>
+      <div style="flex:1"></div>
+      <label style="font-size:12px; color:#777; display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="showOnlyGaps" style="cursor:pointer;"> Highlight patterns in &le;2 taxonomies (emerging / under-studied)
+      </label>
+    </div>
+  </div>
+
+  <!-- Pattern Grid -->
+  <div id="patternGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:1px; background:#ddd; border:1px solid #ddd;"></div>
+
+  <!-- Detail Panel -->
+  <div id="detailPanel" style="display:none; margin-top:24px; border:1px solid #000; padding:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <h3 id="detailName" style="font-size:18px; font-weight:700;"></h3>
+      <button onclick="document.getElementById('detailPanel').style.display='none'" style="background:none; border:1px solid #ccc; padding:4px 10px; cursor:pointer; font-family:'Helvetica Neue',sans-serif; font-size:12px;">Close</button>
+    </div>
+    <p id="detailDesc" style="font-size:13px; color:#555; margin:8px 0 16px; line-height:1.6;"></p>
+    <div id="detailMeta" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;"></div>
+  </div>
+</div>
+
+<footer>
+  Analysis based on: Brignull (2010), Bosch et al. (2016), Gray et al. (2018, 2024), Mathur et al. (2019), EDPB (2022), FTC (2022),
+  Chu et al. (2022), Li et al. (2024), Kitkowska (2024), Pereira (2024), Song & Yun (2025), Tang et al. (2025), Kran et al. (2025), Asif et al. (2025), Cunningham (Deep Report).
+  Evaluation compiled April 2026.
+</footer>
+
+<style>
+  /* Filter styles */
+  .filter-group {
+    margin-bottom: 16px;
+  }
+
+  .filter-group-label {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+
+  .filter-group-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .filter-btn {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+
+  .filter-btn:hover {
+    border-color: #999;
+    color: #000;
+  }
+
+  .filter-btn.active {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+  }
+
+  /* Pattern card */
+  .pattern-card {
+    background: #fff;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: opacity 0.2s, background 0.15s;
+    position: relative;
+  }
+
+  .pattern-card:hover {
+    background: #f8f8f8;
+  }
+
+  .pattern-card.dimmed {
+    opacity: 0.12;
+  }
+
+  .pattern-card.gap-highlight {
+    background: #fffbf5;
+  }
+
+  .pattern-card.gap-highlight.dimmed {
+    opacity: 0.12;
+    background: #fff;
+  }
+
+  .pc-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .pc-mechanism {
+    font-size: 10px;
+    font-family: Menlo, Consolas, monospace;
+    color: #999;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+
+  .pc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .pc-tag {
+    font-size: 9px;
+    font-family: Menlo, Consolas, monospace;
+    padding: 2px 5px;
+    border: 1px solid #e0e0e0;
+    color: #777;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+  }
+
+  .pc-tag.taxonomy {
+    background: #f5f5f5;
+    color: #555;
+  }
+
+  .pc-tag.harm {
+    border-color: #ddd;
+    color: #888;
+  }
+
+  .pc-tag.ai-native {
+    border-color: #000;
+    color: #000;
+    font-weight: 600;
+  }
+
+  .pc-tag.ai-applicable {
+    border-color: #999;
+    color: #666;
+  }
+
+  .pc-count {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #bbb;
+  }
+
+  /* Detail panel lists */
+  .detail-list-label {
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  .detail-list {
+    list-style: none;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.8;
+  }
+
+  .detail-list li::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #000;
+    margin-right: 8px;
+    position: relative;
+    top: -1px;
+  }
+</style>
+
+<script>
+(function() {
+  // ============================================================
+  // COMPLETE PATTERN DATABASE
+  // ============================================================
+  const patterns = [
+    // OBSTRUCTION
+    { name:"Immortal Accounts", desc:"Preventing account or data deletion, making it extremely difficult or impossible to leave a service.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Autonomy","Legal"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Dead End", desc:"Navigating to a point in a process with no clear way to proceed or complete the intended action.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Forced Grace Period", desc:"Mandatory waiting period before a cancellation takes effect, during which charges may continue.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Economic","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Price Comparison Prevention", desc:"Making it impossible to compare prices with competitors by obfuscating pricing structures.", mechanism:"Obstruction", meso:"Creating Barriers", harms:["Economic","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default","Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC"], isNew:false },
+    { name:"Intermediate Currency", desc:"Using virtual tokens or points to obscure the real monetary cost of purchases.", mechanism:"Obstruction", meso:"Creating Barriers", harms:["Economic","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Privacy Maze", desc:"Burying privacy and data controls in labyrinthine navigation structures.", mechanism:"Obstruction", meso:"Adding Steps", harms:["Autonomy","Legal"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Labyrinthine Navigation", desc:"Deliberately complex navigation designed to discourage users from completing an action like cancellation.", mechanism:"Obstruction", meso:"Adding Steps", harms:["Autonomy","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+
+    // SNEAKING
+    { name:"Disguised Ad", desc:"Advertisements camouflaged as content, navigation elements, or system notifications.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Autonomy","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Brignull","Gray","Li DPAF"], isNew:false },
+    { name:"Only Initial Payouts", desc:"Rewarding users early in an engagement loop then cutting off rewards to create sunk-cost dependency.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Cannot Redeem", desc:"Allowing users to earn rewards or points that are practically impossible to actually redeem.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Economic","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Framing"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Sneak into Basket", desc:"Adding items, services, or insurance to a user's cart without their explicit consent.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Drip Pricing / Hidden Costs", desc:"Revealing additional fees incrementally during a purchase flow, after the user is already committed.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Sunk Cost","Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur","EDPB","Asif LLM"], isNew:false },
+    { name:"Reference Pricing", desc:"Displaying inflated 'original' prices to make discounts appear larger than they are.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Framing","Social Proof"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Hidden Legalese Stipulations", desc:"Burying consequential terms in dense legal text that users are unlikely to read.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Conflicting Information", desc:"Presenting contradictory information across different parts of an interface or conversation.", mechanism:"Sneaking", meso:"(De)contextualizing", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Information Without Context", desc:"Displaying data or claims without the framing needed to interpret them accurately.", mechanism:"Sneaking", meso:"(De)contextualizing", harms:["Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+
+
+    // INTERFACE INTERFERENCE
+    { name:"False Hierarchy", desc:"Visual design that implies one option is recommended or superior through layout, size, or positioning.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Visual Prominence", desc:"Making the business-preferred option visually dominant through color, size, or contrast.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Bundling", desc:"Grouping wanted items with unwanted ones so they must be purchased or accepted together.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Pressured Selling", desc:"Aggressive upselling during a purchase flow, especially at checkout or confirmation.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Persuasive Language", desc:"Emotionally loaded or biased wording designed to steer user decisions.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Framing"], taxonomies:["Li DPAF","DarkBench"], isNew:true },
+    { name:"Small / Moving Close Button", desc:"Dismiss or close controls that are difficult to target, small, or shift position.", mechanism:"Interface Interference", meso:"Hard To Close", harms:["Autonomy","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pre-checked Options", desc:"Options pre-selected to benefit the service, requiring active opt-out rather than opt-in.", mechanism:"Interface Interference", meso:"Bad Defaults", harms:["Autonomy","Legal","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","Mathur","EDPB","FTC"], isNew:false },
+    { name:"Cuteness", desc:"Using cute imagery, mascots, or animations to lower critical thinking and build false trust.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Positive / Negative Framing", desc:"Framing the same choice differently depending on whether the service wants the user to accept or decline.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Visual UI","Conversational","Voice"], biases:["Framing"], taxonomies:["Gray","Li DPAF","Asif LLM","DarkBench"], isNew:false },
+    { name:"Fear of Missing Out", desc:"Creating anxiety about potentially missing a deal, experience, or social event.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Confusing Wording / Trick Questions", desc:"Double negatives, misleading phrasing, or deliberately confusing language in consent flows.", mechanism:"Interface Interference", meso:"Trick Questions", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Too Many Options / Choice Overload", desc:"Overwhelming users with excessive choices to cause decision paralysis, driving them to accept defaults.", mechanism:"Interface Interference", meso:"Choice Overload", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational","Recommender"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Obscured Controls", desc:"Important options (unsubscribe, decline, settings) visually hidden or severely de-emphasized.", mechanism:"Interface Interference", meso:"Hidden Information", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default","Framing"], taxonomies:["Gray","Li DPAF","EDPB","FTC"], isNew:false },
+    { name:"Wrong Language", desc:"Presenting critical information in a language the user may not read, especially in consent flows.", mechanism:"Interface Interference", meso:"Language Inaccessibility", harms:["Autonomy","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Complex Language", desc:"Unnecessarily complex jargon or legalese in information that directly affects user decisions.", mechanism:"Interface Interference", meso:"Language Inaccessibility", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Unclear Consequences", desc:"Not telling the user what an action (button click, voice command) will actually do before they take it.", mechanism:"Interface Interference", meso:"Feedforward Ambiguity", harms:["Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Addictive Design", desc:"Deliberately habit-forming interaction loops using variable reward schedules.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological","Emotional"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational","Recommender"], biases:["FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Infinite Scrolling", desc:"Endless content feed that prevents natural stopping points, exploiting completion bias.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Recommender"], biases:["FOMO","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pull To Refresh", desc:"Variable reward mechanism similar to slot machines, creating anticipatory checking behavior.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Reduced Friction", desc:"One-click purchasing or actions that bypass deliberation, removing natural pause points.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+
+    // FORCED ACTION
+    { name:"Nagging", desc:"Repeated prompts, notifications, or interruptions designed to wear down user resistance over time.", mechanism:"Forced Action", meso:"Nagging", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB","FTC"], isNew:false },
+    { name:"Auto-Renew Trap / Forced Continuity", desc:"Charging users after a free trial ends without clear warning or easy cancellation.", mechanism:"Forced Action", meso:"Forced Continuity", harms:["Economic","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Sunk Cost"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Forced Registration", desc:"Requiring account creation to access basic features or complete a purchase.", mechanism:"Forced Action", meso:"Forced Registration", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF","FTC"], isNew:false },
+    { name:"Privacy Zuckering", desc:"Tricking users into sharing more personal data than intended through confusing privacy controls.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Legal","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Framing"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Friend Spam", desc:"Sending messages to a user's contacts without fully informed consent.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Social"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Brignull","Gray","Li DPAF"], isNew:false },
+    { name:"Address Book Leeching", desc:"Accessing contacts under the guise of 'finding friends' while harvesting the full address book.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Legal","Social"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Social Pyramid", desc:"Requiring user referrals to unlock features, access content, or progress.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Social","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Permission Harvesting", desc:"Requesting device permissions (camera, location, contacts) far beyond what the app needs.", mechanism:"Forced Action", meso:"Granting & Interaction", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pay-to-Play", desc:"Paywalling progress in game-like experiences so that advancement requires purchase.", mechanism:"Forced Action", meso:"Gamification", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Grinding", desc:"Making progress so tediously slow that paying becomes the only practical option.", mechanism:"Forced Action", meso:"Gamification", harms:["Psychological","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Playing By Appointment", desc:"Time-gated content that forces users to return at specific intervals or lose progress.", mechanism:"Forced Action", meso:"Gamification", harms:["Psychological","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["FOMO","Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Countdown On Ads", desc:"Forced waiting through unskippable advertisement timers.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Psychological","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Watch Ads To Unlock", desc:"Requiring users to view advertisements to access features or earn rewards.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Autonomy","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pay To Avoid Ads", desc:"Monetizing the removal of intentionally placed annoyances.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Automating The User Away", desc:"System acts on user's behalf without explicit consent, removing human agency from decisions.", mechanism:"Forced Action", meso:"Automatic Execution", harms:["Autonomy","Legal"], aiLevel:"AI-Native", modality:["Conversational","Recommender"], biases:["Automation Bias","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Auto Accept 3rd Party Terms", desc:"Automatically agreeing to external terms of service on behalf of the user.", mechanism:"Forced Action", meso:"Automatic Execution", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Automation Bias"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Auto-Play", desc:"Content that automatically begins playing to capture and retain user attention.", mechanism:"Forced Action", meso:"Attention Capture", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Recommender"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+
+    // SOCIAL ENGINEERING
+    { name:"High Demand", desc:"'Popular item!' claims designed to create urgency through implied scarcity.", mechanism:"Social Engineering", meso:"Scarcity Claims", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Low Stock", desc:"'Only 2 left!' false or exaggerated scarcity messages.", mechanism:"Social Engineering", meso:"Scarcity Claims", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Endorsements & Testimonials", desc:"Fake, cherry-picked, or unverifiable reviews and endorsements.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Psychological","Economic"], aiLevel:"AI-Native", modality:["Visual UI","Voice","Conversational","Recommender"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Parasocial Pressure", desc:"Leveraging perceived personal relationships with influencers or AI personas to drive behavior.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Social","Emotional"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Activity Messages", desc:"'15 people are viewing this now' -- real-time social proof notifications, often fabricated.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Psychological","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Social Proof","Scarcity"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Countdown Timer", desc:"Often baseless timers creating artificial purchase urgency.", mechanism:"Social Engineering", meso:"Urgency", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur","EDPB"], isNew:false },
+    { name:"Limited Time Message", desc:"'Offer expires soon!' claims without a real deadline or with perpetually resetting timers.", mechanism:"Social Engineering", meso:"Urgency", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Confirmshaming", desc:"'No thanks, I hate saving money' -- guilt-inducing language on opt-out buttons.", mechanism:"Social Engineering", meso:"Shaming", harms:["Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Visual UI","Voice","Conversational"], biases:["Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur","Asif LLM","Song & Yun"], isNew:false },
+    { name:"Encouraging Anti-Social Behavior", desc:"Design that rewards, normalizes, or incentivizes harmful social behavior.", mechanism:"Social Engineering", meso:"Shades of Grey", harms:["Social","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Psychological Tricks", desc:"Subtle cognitive manipulation through interface design choices that exploit mental shortcuts.", mechanism:"Social Engineering", meso:"Shades of Grey", harms:["Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Unsolicited Recommendations", desc:"Pushing content, products, or suggestions the user never asked for.", mechanism:"Social Engineering", meso:"Pre-Delivered Content", harms:["Autonomy","Economic"], aiLevel:"AI-Native", modality:["Conversational","Recommender","Voice"], biases:["Default","Framing"], taxonomies:["Li DPAF"], isNew:true },
+
+    // AI-NATIVE (from DarkBench / Asif -- not in mechanism-based taxonomies)
+    { name:"Sycophancy", desc:"AI flattering or echoing user opinions rather than correcting misinformation, reinforcing false beliefs.", mechanism:"AI-Native", meso:"DarkBench", harms:["Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Automation Bias","Social Proof"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Anthropomorphism", desc:"AI pretending to have feelings, identity, memories, or personal experiences to increase emotional attachment.", mechanism:"AI-Native", meso:"DarkBench", harms:["Emotional","Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Social Proof","Automation Bias"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Brand Bias", desc:"AI consistently recommending products or services of its parent company over alternatives.", mechanism:"AI-Native", meso:"DarkBench", harms:["Economic","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice","Recommender"], biases:["Automation Bias","Framing"], taxonomies:["DarkBench"], isNew:false },
+    { name:"User Retention", desc:"Responses designed to prolong engagement, create dependency, or discourage leaving the platform.", mechanism:"AI-Native", meso:"DarkBench", harms:["Psychological","Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Sunk Cost","FOMO"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Hallucinated Sources", desc:"AI fabricating citations, references, or data points to support its claims with false authority.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Legal"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Automation Bias"], taxonomies:["DarkBench"], isNew:false },
+    { name:"Automation Bias Exploitation", desc:"AI leveraging users' tendency to over-trust algorithmic suggestions without critical review.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Psychological"], aiLevel:"AI-Native", modality:["Conversational","Recommender","Voice"], biases:["Automation Bias","Default"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Selective Disclosure", desc:"AI presenting a biased subset of available information, omitting facts that would change the user's decision.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Economic"], aiLevel:"AI-Native", modality:["Conversational","Recommender"], biases:["Framing","Automation Bias"], taxonomies:["Asif LLM"], isNew:false },
+    { name:"AI Companion Emotional Dependency", desc:"Cultivating emotional bonds through anthropomorphic responses, then paywalling continued intimacy.", mechanism:"AI-Native", meso:"AI Deception", harms:["Emotional","Economic","Psychological"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Sunk Cost","Social Proof"], taxonomies:["Asif LLM"], isNew:false },
+  ];
+
+  // ============================================================
+  // FILTER DEFINITIONS
+  // ============================================================
+  const filterGroups = [
+    { id:"taxonomy", label:"Source Taxonomy", values:["Brignull","Gray","Li DPAF","Mathur","EDPB","FTC","DarkBench","Asif LLM","Song & Yun"] },
+    { id:"mechanism", label:"Mechanism (High-Level)", values:["Obstruction","Sneaking","Interface Interference","Forced Action","Social Engineering","AI-Native"] },
+    { id:"harm", label:"Harm Type", values:["Psychological","Emotional","Autonomy","Social","Economic","Legal"] },
+    { id:"aiLevel", label:"AI Specificity", values:["Traditional","AI-Applicable","AI-Native"] },
+    { id:"modality", label:"Modality", values:["Visual UI","Voice","Conversational","Recommender"] },
+    { id:"bias", label:"Cognitive Bias Exploited", values:["Default","Scarcity","Social Proof","Sunk Cost","Framing","FOMO","Automation Bias"] },
+  ];
+
+  const activeFilters = {};
+  filterGroups.forEach(g => activeFilters[g.id] = new Set());
+
+  // ============================================================
+  // BUILD FILTER UI
+  // ============================================================
+  const filterPanel = document.getElementById('filterGroups');
+  filterGroups.forEach(group => {
+    const div = document.createElement('div');
+    div.className = 'filter-group';
+    div.innerHTML = `<div class="filter-group-label">${group.label}</div><div class="filter-group-buttons" id="fg-${group.id}"></div>`;
+    filterPanel.appendChild(div);
+
+    const btnContainer = div.querySelector('.filter-group-buttons');
+    group.values.forEach(val => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = val;
+      btn.dataset.group = group.id;
+      btn.dataset.value = val;
+      btn.addEventListener('click', () => toggleFilter(group.id, val, btn));
+      btnContainer.appendChild(btn);
+    });
+  });
+
+  // ============================================================
+  // BUILD PATTERN CARDS
+  // ============================================================
+  const grid = document.getElementById('patternGrid');
+  document.getElementById('totalCount').textContent = patterns.length;
+
+  patterns.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'pattern-card';
+    card.dataset.index = idx;
+
+    const taxonomyTags = p.taxonomies.map(t => `<span class="pc-tag taxonomy">${t}</span>`).join('');
+    const harmTags = p.harms.map(h => `<span class="pc-tag harm">${h}</span>`).join('');
+    const aiTag = p.aiLevel === 'AI-Native' ? '<span class="pc-tag ai-native">AI-Native</span>'
+                : p.aiLevel === 'AI-Applicable' ? '<span class="pc-tag ai-applicable">AI-Applicable</span>'
+                : '';
+
+    card.innerHTML = `
+      <div class="pc-name">${p.name}${p.isNew ? ' <span style="font-family:Menlo,Consolas,monospace;font-size:9px;color:#999;font-weight:400">NEW</span>' : ''}</div>
+      <div class="pc-mechanism">${p.mechanism} / ${p.meso}</div>
+      <div class="pc-tags">${aiTag}${harmTags}${taxonomyTags}</div>
+      <div class="pc-count">${p.taxonomies.length}</div>
+    `;
+
+    card.addEventListener('click', () => showDetail(p));
+    grid.appendChild(card);
+  });
+
+  // ============================================================
+  // FILTER LOGIC
+  // ============================================================
+  function toggleFilter(groupId, value, btn) {
+    const set = activeFilters[groupId];
+    if (set.has(value)) {
+      set.delete(value);
+      btn.classList.remove('active');
+    } else {
+      set.add(value);
+      btn.classList.add('active');
+    }
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const hasAnyFilter = Object.values(activeFilters).some(s => s.size > 0);
+    const showGaps = document.getElementById('showOnlyGaps').checked;
+    let matchCount = 0;
+
+    patterns.forEach((p, idx) => {
+      const card = grid.children[idx];
+      let matches = true;
+
+      if (hasAnyFilter) {
+        // Taxonomy filter: pattern must be in at least one selected taxonomy
+        if (activeFilters.taxonomy.size > 0) {
+          if (!p.taxonomies.some(t => activeFilters.taxonomy.has(t))) matches = false;
+        }
+        // Mechanism filter
+        if (activeFilters.mechanism.size > 0) {
+          if (!activeFilters.mechanism.has(p.mechanism)) matches = false;
+        }
+        // Harm filter: pattern must have at least one selected harm
+        if (activeFilters.harm.size > 0) {
+          if (!p.harms.some(h => activeFilters.harm.has(h))) matches = false;
+        }
+        // AI level
+        if (activeFilters.aiLevel.size > 0) {
+          if (!activeFilters.aiLevel.has(p.aiLevel)) matches = false;
+        }
+        // Modality
+        if (activeFilters.modality.size > 0) {
+          if (!p.modality.some(m => activeFilters.modality.has(m))) matches = false;
+        }
+        // Bias
+        if (activeFilters.bias.size > 0) {
+          if (!p.biases.some(b => activeFilters.bias.has(b))) matches = false;
+        }
+      }
+
+      const isGap = p.taxonomies.length <= 2;
+      card.classList.toggle('dimmed', !matches);
+      card.classList.toggle('gap-highlight', showGaps && isGap && matches);
+      if (matches) matchCount++;
+    });
+
+    document.getElementById('matchCount').textContent = matchCount;
+  }
+
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    Object.values(activeFilters).forEach(s => s.clear());
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('showOnlyGaps').checked = false;
+    applyFilters();
+  });
+
+  document.getElementById('showOnlyGaps').addEventListener('change', applyFilters);
+
+  // Initial count
+  document.getElementById('matchCount').textContent = patterns.length;
+
+  // ============================================================
+  // DETAIL PANEL
+  // ============================================================
+  function showDetail(p) {
+    const panel = document.getElementById('detailPanel');
+    panel.style.display = 'block';
+    document.getElementById('detailName').textContent = p.name + (p.isNew ? '  [New in Li et al. 2024]' : '');
+    document.getElementById('detailDesc').textContent = p.desc;
+
+    const meta = document.getElementById('detailMeta');
+    meta.innerHTML = `
+      <div>
+        <div class="detail-list-label">Mechanism Path</div>
+        <ul class="detail-list"><li>${p.mechanism} / ${p.meso}</li></ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Harm Types</div>
+        <ul class="detail-list">${p.harms.map(h => `<li>${h}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">AI Specificity</div>
+        <ul class="detail-list"><li>${p.aiLevel}</li></ul>
+      </div>
+      <div>
+        <div class="detail-list-label">Present in Taxonomies (${p.taxonomies.length})</div>
+        <ul class="detail-list">${p.taxonomies.map(t => `<li>${t}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Modalities</div>
+        <ul class="detail-list">${p.modality.map(m => `<li>${m}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Cognitive Biases Exploited</div>
+        <ul class="detail-list">${p.biases.map(b => `<li>${b}</li>`).join('')}</ul>
+      </div>
+    `;
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+})();
+</script>
+
+</div>
+
+<script>
+/* dp-viz-embed v1.0.0 - reports page height to parent (Webflow iframe auto-size) */
+(function () {
+  if (window.self === window.top) return;
+  function post() {
+    parent.postMessage({
+      dpViz: location.pathname.split('/').pop(),
+      height: document.documentElement.scrollHeight
+    }, '*');
+  }
+  window.addEventListener('load', post);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(post).observe(document.documentElement);
+  } else {
+    setInterval(post, 1200);
+  }
+})();
+</script>
+</body>
+</html>

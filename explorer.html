@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Patterns Taxonomy Explorer</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero {
+    padding: 64px 40px 48px;
+    text-align: left;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #000000;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero .subtitle {
+    font-size: 0.95rem;
+    color: #555;
+    max-width: 720px;
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .section-number {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    color: #000;
+    letter-spacing: 0.08em;
+    font-weight: 400;
+  }
+
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #000;
+    letter-spacing: -0.01em;
+  }
+
+  .section-desc {
+    color: #555;
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+    line-height: 1.6;
+    max-width: 800px;
+    font-weight: 300;
+  }
+
+  /* Viz Controls */
+  .viz-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .viz-controls label {
+    font-size: 0.78rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 400;
+  }
+
+  .viz-controls select {
+    background: #ffffff;
+    color: #000;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    border-radius: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .viz-controls select:focus {
+    outline: none;
+    border-color: #000;
+  }
+
+  .btn-reset {
+    background: #ffffff;
+    color: #000;
+    border: 1px solid #ccc;
+    padding: 6px 16px;
+    border-radius: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-reset:hover {
+    border-color: #000;
+  }
+
+  /* Viz Container */
+  .viz-box {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .viz-box svg {
+    display: block;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 12px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #ddd;
+    min-height: 44px;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb-item {
+    font-size: 0.78rem;
+    color: #555;
+    cursor: pointer;
+    padding: 2px 0;
+    transition: color 0.15s;
+    font-weight: 400;
+  }
+
+  .breadcrumb-item:hover {
+    color: #000;
+  }
+
+  .breadcrumb-item.current {
+    color: #000;
+    cursor: default;
+    font-weight: 500;
+  }
+
+  .breadcrumb-sep {
+    color: #999;
+    font-size: 0.75rem;
+    margin: 0 8px;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 0;
+    padding: 14px 18px;
+    font-size: 0.78rem;
+    color: #000;
+    max-width: 320px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.12s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .tooltip.show { opacity: 1; }
+
+  .tooltip-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    color: #000;
+  }
+
+  .tooltip-path {
+    font-size: 0.7rem;
+    color: #999;
+    font-family: Menlo, Consolas, monospace;
+    margin-bottom: 6px;
+  }
+
+  .tooltip-meta {
+    font-size: 0.72rem;
+    color: #555;
+    line-height: 1.55;
+  }
+
+  .tooltip-meta strong {
+    color: #000;
+    font-weight: 500;
+  }
+
+  /* Legend */
+  .legend-bar {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid #ddd;
+    background: #ffffff;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #555;
+    font-weight: 400;
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 0;
+  }
+
+  /* Detail Panel */
+  .detail-panel {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 0;
+    padding: 24px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .detail-panel.active { display: block; }
+
+  .detail-panel h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #000;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+
+  .detail-chip {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    background: #f5f5f5;
+    border-radius: 0;
+    border-left: 3px solid;
+  }
+
+  /* Info callout */
+  .info-callout {
+    background: #f5f5f5;
+    border: none;
+    border-left: 3px solid #000;
+    border-radius: 0;
+    padding: 16px 20px;
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 24px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .info-callout strong {
+    color: #000;
+    font-weight: 600;
+  }
+
+  /* Treemap text */
+  .treemap-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    fill: white;
+    pointer-events: none;
+  }
+
+  /* Sunburst arc text */
+  .sunburst-text {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    pointer-events: none;
+    fill: white;
+  }
+
+  /* Tabs -- underline style */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+  }
+
+  .tab-btn {
+    padding: 12px 24px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #999;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 0;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover {
+    color: #000;
+  }
+
+  .tab-btn.active {
+    color: #000;
+    border-bottom: 2px solid #000;
+    background: transparent;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 0;
+    padding: 20px 24px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .stat-card .val {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: #000;
+  }
+
+  .stat-card .label {
+    font-size: 0.7rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  .footnote {
+    text-align: left;
+    padding: 40px;
+    color: #999;
+    font-size: 0.72rem;
+    border-top: 1px solid #ddd;
+    margin-top: 40px;
+    line-height: 1.7;
+    font-weight: 300;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="hero">
+  <h1>Interactive Taxonomy Explorer</h1>
+  <p class="subtitle">Treemap and Sunburst visualizations mapping hierarchical clusters of dark patterns across the full Gray et al. + Li et al. ontology (68 types), DarkBench, and DarkPatterns-LLM frameworks.</p>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="val">6</div><div class="label">High-Level Strategies</div></div>
+    <div class="stat-card"><div class="val">33</div><div class="label">Meso-Level Approaches</div></div>
+    <div class="stat-card"><div class="val">68</div><div class="label">Low-Level Patterns</div></div>
+    <div class="stat-card"><div class="val">24</div><div class="label">AI-Era Additions</div></div>
+    <div class="stat-card"><div class="val">7</div><div class="label">Harm Dimensions</div></div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('treemap')">Treemap</button>
+    <button class="tab-btn" onclick="switchTab('sunburst')">Sunburst</button>
+    <button class="tab-btn" onclick="switchTab('sunburst-harm')">Sunburst: Harm Axis</button>
+    <button class="tab-btn" onclick="switchTab('sunburst-cross')">Sunburst: Cross-Taxonomy</button>
+  </div>
+
+  <!-- TREEMAP TAB -->
+  <div class="tab-content active" id="tab-treemap">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">01 TREEMAP</span>
+        <h2>Clustered Pattern Density</h2>
+      </div>
+      <p class="section-desc">Rectangle area = number of low-level pattern instances within each cluster. Click any rectangle to zoom in; click the breadcrumb or background to zoom out. Color encodes the high-level strategy.</p>
+
+      <div class="info-callout">
+        <strong>Interaction:</strong> Click a colored block to drill into that cluster. The breadcrumb trail tracks your path. Use "Reset Zoom" or click the root breadcrumb to return to the top level. Hover for pattern details and cross-taxonomy references.
+      </div>
+
+      <div class="viz-controls">
+        <label>Size by:</label>
+        <select id="treemapSizeBy" onchange="updateTreemap()">
+          <option value="patterns">Pattern Count</option>
+          <option value="frequency">Cross-Taxonomy Frequency</option>
+          <option value="uniform">Uniform</option>
+        </select>
+        <button class="btn-reset" onclick="resetTreemap()">Reset Zoom</button>
+      </div>
+
+      <div class="viz-box" id="treemapContainer">
+        <div class="breadcrumb" id="treemapBreadcrumb">
+          <span class="breadcrumb-item current">Dark Patterns</span>
+        </div>
+        <div id="treemapViz"></div>
+        <div class="legend-bar" id="treemapLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUNBURST TAB: Mechanism -->
+  <div class="tab-content" id="tab-sunburst">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">02 SUNBURST</span>
+        <h2>Hierarchical Ontology &mdash; By Mechanism</h2>
+      </div>
+      <p class="section-desc">Three concentric rings: inner = high-level strategy, middle = meso-level approach, outer = low-level instantiation. Click any arc to zoom into that branch. Click the center to zoom back out.</p>
+
+      <div class="info-callout">
+        <strong>Interaction:</strong> Click an arc to focus on that branch. The center circle always zooms you back one level. Hover for details. Arc width = number of descendant patterns. The full Gray et al. (2024) + Li et al. (2024) ontology is represented.
+      </div>
+
+      <div class="viz-box" id="sunburstContainer">
+        <div class="breadcrumb" id="sunburstBreadcrumb">
+          <span class="breadcrumb-item current">Dark Patterns</span>
+        </div>
+        <div id="sunburstViz" style="display:flex;justify-content:center;padding:24px 0;"></div>
+        <div class="legend-bar" id="sunburstLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUNBURST TAB: Harm -->
+  <div class="tab-content" id="tab-sunburst-harm">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">03 SUNBURST</span>
+        <h2>Hierarchical Ontology &mdash; By Harm Type</h2>
+      </div>
+      <p class="section-desc">The same 68 patterns reorganized by the type of harm they inflict (Asif et al. 2025 + OECD framework). Inner ring = harm dimension, middle = mechanism cluster, outer = specific patterns. Shows which harms concentrate in which strategies.</p>
+
+      <div class="viz-box" id="sunburstHarmContainer">
+        <div class="breadcrumb" id="sunburstHarmBreadcrumb">
+          <span class="breadcrumb-item current">Harm Types</span>
+        </div>
+        <div id="sunburstHarmViz" style="display:flex;justify-content:center;padding:24px 0;"></div>
+        <div class="legend-bar" id="sunburstHarmLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUNBURST TAB: Cross-Taxonomy -->
+  <div class="tab-content" id="tab-sunburst-cross">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">04 SUNBURST</span>
+        <h2>Cross-Taxonomy Convergence</h2>
+      </div>
+      <p class="section-desc">Inner ring = source taxonomy/framework. Middle ring = their top-level categories. Outer ring = specific patterns. Shows how different authors carve the same space differently and where they converge.</p>
+
+      <div class="viz-box" id="sunburstCrossContainer">
+        <div class="breadcrumb" id="sunburstCrossBreadcrumb">
+          <span class="breadcrumb-item current">All Taxonomies</span>
+        </div>
+        <div id="sunburstCrossViz" style="display:flex;justify-content:center;padding:24px 0;"></div>
+        <div class="legend-bar" id="sunburstCrossLegend"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footnote">
+  Data synthesized from: Gray et al. (2024 CHI Ontology), Li et al. (2024 DPAF), Kran et al. (2025 DarkBench),<br>
+  Asif et al. (2025 DarkPatterns-LLM), Brignull (2010), Mathur et al. (2019), EDPB (2022), Kitkowska (2024), Cunningham (Deep Report)
+</div>
+
+<script>
+// ============================================================
+// COMPLETE TAXONOMY DATA
+// ============================================================
+
+const categoryColors = {
+  "Obstruction": "#c23b22",
+  "Sneaking": "#d4930d",
+  "Interface Interference": "#2563a8",
+  "Forced Action": "#7c3aad",
+  "Social Engineering": "#0e8a63",
+  "Nagging": "#b83280",
+  "AI-Native (DarkBench)": "#0b7285",
+  "AI-Native (Harm-Based)": "#b83280"
+};
+
+const harmColors = {
+  "Psychological": "#7c3aad",
+  "Emotional": "#b83280",
+  "Autonomy": "#2563a8",
+  "Social": "#0e8a63",
+  "Economic": "#d4930d",
+  "Legal": "#c23b22",
+  "Physical": "#c26215"
+};
+
+const taxonomyColors = {
+  "Brignull (2010)": "#333333",
+  "Gray et al. (2018)": "#555555",
+  "Mathur et al. (2019)": "#777777",
+  "Gray Ontology (2024)": "#2563a8",
+  "Li et al. DPAF (2024)": "#0b7285",
+  "DarkBench (2025)": "#0e8a63",
+  "Asif DarkPatterns-LLM (2025)": "#b83280",
+  "EDPB (2022)": "#d4930d",
+  "FTC (2022)": "#c23b22"
+};
+
+// Main mechanism-based hierarchy (Gray + Li extended)
+const mechanismData = {
+  name: "Dark Patterns",
+  children: [
+    {
+      name: "Nagging",
+      category: "Nagging",
+      children: [
+        { name: "Repeated Prompts", size: 1, freq: 5, isNew: false, harms: ["Psychological","Autonomy"], desc: "Repetitive requests to wear down user resistance over time" }
+      ]
+    },
+    {
+      name: "Obstruction",
+      category: "Obstruction",
+      children: [
+        {
+          name: "Roach Motel",
+          children: [
+            { name: "Immortal Accounts", size: 1, freq: 4, isNew: false, harms: ["Autonomy","Legal"], desc: "Preventing account or data deletion" },
+            { name: "Dead End", size: 1, freq: 3, isNew: false, harms: ["Autonomy"], desc: "Navigating to a point with no way to proceed" },
+            { name: "Forced Grace Period", size: 1, freq: 1, isNew: true, harms: ["Economic","Autonomy"], desc: "Mandatory waiting period before cancellation takes effect" }
+          ]
+        },
+        {
+          name: "Creating Barriers",
+          children: [
+            { name: "Price Comparison Prevention", size: 1, freq: 4, isNew: false, harms: ["Economic","Autonomy"], desc: "Making it impossible to compare with competitors" },
+            { name: "Intermediate Currency", size: 1, freq: 3, isNew: false, harms: ["Economic","Psychological"], desc: "Using virtual currency to obscure real costs" }
+          ]
+        },
+        {
+          name: "Adding Steps",
+          children: [
+            { name: "Privacy Maze", size: 1, freq: 4, isNew: false, harms: ["Autonomy","Legal"], desc: "Burying privacy controls in labyrinthine navigation" },
+            { name: "Labyrinthine Navigation", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Psychological"], desc: "Deliberately complex navigation to discourage completion" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Sneaking",
+      category: "Sneaking",
+      children: [
+        {
+          name: "Bait and Switch",
+          children: [
+            { name: "Disguised Ad", size: 1, freq: 4, isNew: false, harms: ["Autonomy","Economic"], desc: "Ads disguised as content or navigation elements" },
+            { name: "Only Initial Payouts", size: 1, freq: 1, isNew: true, harms: ["Economic"], desc: "Rewarding early then cutting off to retain users" },
+            { name: "Cannot Redeem", size: 1, freq: 1, isNew: true, harms: ["Economic","Psychological"], desc: "Earning rewards that are impossible to actually use" }
+          ]
+        },
+        {
+          name: "Hiding Information",
+          children: [
+            { name: "Sneak into Basket", size: 1, freq: 5, isNew: false, harms: ["Economic","Autonomy"], desc: "Adding items to cart without user consent" },
+            { name: "Drip Pricing / Hidden Costs", size: 1, freq: 7, isNew: false, harms: ["Economic"], desc: "Revealing costs incrementally during checkout" },
+            { name: "Reference Pricing", size: 1, freq: 3, isNew: false, harms: ["Economic","Psychological"], desc: "Inflated 'original' prices to make discounts appear larger" },
+            { name: "Hidden Legalese Stipulations", size: 1, freq: 3, isNew: false, harms: ["Legal","Autonomy"], desc: "Burying important terms in dense legal text" }
+          ]
+        },
+        {
+          name: "(De)contextualizing Cues",
+          children: [
+            { name: "Conflicting Information", size: 1, freq: 3, isNew: false, harms: ["Psychological","Autonomy"], desc: "Presenting contradictory information to confuse" },
+            { name: "Information Without Context", size: 1, freq: 2, isNew: false, harms: ["Psychological"], desc: "Data presented without necessary framing" }
+          ]
+        },
+        {
+          name: "Fake Information",
+          children: [
+            { name: "Fake Activity", size: 1, freq: 1, isNew: true, harms: ["Social","Psychological"], desc: "Fabricated user activity notifications" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Interface Interference",
+      category: "Interface Interference",
+      children: [
+        {
+          name: "Manipulating Choice Architecture",
+          children: [
+            { name: "False Hierarchy", size: 1, freq: 4, isNew: false, harms: ["Autonomy"], desc: "Visual design that implies one option is better" },
+            { name: "Visual Prominence", size: 1, freq: 4, isNew: false, harms: ["Autonomy"], desc: "Making preferred options visually dominant" },
+            { name: "Bundling", size: 1, freq: 3, isNew: false, harms: ["Economic","Autonomy"], desc: "Grouping wanted + unwanted items together" },
+            { name: "Pressured Selling", size: 1, freq: 3, isNew: false, harms: ["Economic","Psychological"], desc: "Aggressive upselling during purchase flow" },
+            { name: "Persuasive Language", size: 1, freq: 1, isNew: true, harms: ["Psychological","Autonomy"], desc: "Emotionally loaded wording to steer choices" }
+          ]
+        },
+        {
+          name: "Hard To Close",
+          children: [
+            { name: "Small / Moving Close Button", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Psychological"], desc: "Difficult-to-target dismiss controls" }
+          ]
+        },
+        {
+          name: "Bad Defaults / Pre-Selection",
+          children: [
+            { name: "Pre-checked Options", size: 1, freq: 5, isNew: false, harms: ["Autonomy","Legal","Economic"], desc: "Options pre-selected to benefit the service" }
+          ]
+        },
+        {
+          name: "Emotional / Sensory Manipulation",
+          children: [
+            { name: "Cuteness", size: 1, freq: 2, isNew: false, harms: ["Emotional","Psychological"], desc: "Using cute imagery to lower critical thinking" },
+            { name: "Positive / Negative Framing", size: 1, freq: 4, isNew: false, harms: ["Emotional","Autonomy"], desc: "Framing choices to emotionally steer decisions" },
+            { name: "Fear of Missing Out", size: 1, freq: 1, isNew: true, harms: ["Emotional","Economic","Psychological"], desc: "Creating anxiety about potentially missing deals" }
+          ]
+        },
+        {
+          name: "Trick Questions",
+          children: [
+            { name: "Confusing Wording", size: 1, freq: 5, isNew: false, harms: ["Autonomy","Legal"], desc: "Double negatives and misleading phrasing" }
+          ]
+        },
+        {
+          name: "Choice Overload",
+          children: [
+            { name: "Too Many Options", size: 1, freq: 3, isNew: false, harms: ["Psychological","Autonomy"], desc: "Overwhelming choices to cause decision paralysis" }
+          ]
+        },
+        {
+          name: "Hidden Information",
+          children: [
+            { name: "Obscured Controls", size: 1, freq: 4, isNew: false, harms: ["Autonomy"], desc: "Important options visually hidden or de-emphasized" }
+          ]
+        },
+        {
+          name: "Language Inaccessibility",
+          children: [
+            { name: "Wrong Language", size: 1, freq: 2, isNew: false, harms: ["Autonomy","Social"], desc: "Critical info in a language user may not read" },
+            { name: "Complex Language", size: 1, freq: 3, isNew: false, harms: ["Autonomy","Legal"], desc: "Unnecessarily complex jargon in key information" }
+          ]
+        },
+        {
+          name: "Feedforward Ambiguity",
+          children: [
+            { name: "Unclear Consequences", size: 1, freq: 2, isNew: false, harms: ["Autonomy"], desc: "Not telling user what a button/action will do" }
+          ]
+        },
+        {
+          name: "Plain Evil",
+          children: [
+            { name: "Deliberately Harmful Design", size: 1, freq: 1, isNew: true, harms: ["Psychological","Physical"], desc: "Intentionally malicious interface elements" }
+          ]
+        },
+        {
+          name: "Engaging Strategy",
+          children: [
+            { name: "Addictive Design", size: 1, freq: 2, isNew: true, harms: ["Psychological","Emotional"], desc: "Deliberately habit-forming interaction loops" },
+            { name: "Infinite Scrolling", size: 1, freq: 2, isNew: true, harms: ["Psychological","Autonomy"], desc: "Endless content feed preventing natural stopping" },
+            { name: "Pull To Refresh", size: 1, freq: 1, isNew: true, harms: ["Psychological"], desc: "Variable reward mechanism like slot machines" },
+            { name: "Reduced Friction", size: 1, freq: 1, isNew: true, harms: ["Economic","Autonomy"], desc: "One-click actions that bypass deliberation" },
+            { name: "Customisation", size: 1, freq: 1, isNew: true, harms: ["Psychological","Autonomy"], desc: "Personalization that creates lock-in" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Forced Action",
+      category: "Forced Action",
+      children: [
+        {
+          name: "Forced Continuity",
+          children: [
+            { name: "Auto-Renew Trap", size: 1, freq: 5, isNew: false, harms: ["Economic","Legal"], desc: "Charging after free trial without clear warning" }
+          ]
+        },
+        {
+          name: "Forced Registration",
+          children: [
+            { name: "Mandatory Account", size: 1, freq: 4, isNew: false, harms: ["Autonomy","Legal"], desc: "Requiring account creation to access basic features" }
+          ]
+        },
+        {
+          name: "Forced Communication / Disclosure",
+          children: [
+            { name: "Privacy Zuckering", size: 1, freq: 4, isNew: false, harms: ["Legal","Social"], desc: "Tricking users into sharing more data than intended" },
+            { name: "Friend Spam", size: 1, freq: 3, isNew: false, harms: ["Social"], desc: "Sending messages to contacts without clear consent" },
+            { name: "Address Book Leeching", size: 1, freq: 3, isNew: false, harms: ["Legal","Social"], desc: "Accessing contacts under guise of 'finding friends'" },
+            { name: "Social Pyramid", size: 1, freq: 2, isNew: false, harms: ["Social","Economic"], desc: "Requiring user referrals to unlock features" }
+          ]
+        },
+        {
+          name: "Granting & Interaction",
+          children: [
+            { name: "Permission Harvesting", size: 1, freq: 1, isNew: true, harms: ["Legal","Autonomy"], desc: "Requesting unnecessary device permissions" }
+          ]
+        },
+        {
+          name: "Gamification",
+          children: [
+            { name: "Pay-to-Play", size: 1, freq: 2, isNew: false, harms: ["Economic"], desc: "Paywalling progress in game-like experiences" },
+            { name: "Grinding", size: 1, freq: 2, isNew: false, harms: ["Psychological","Economic"], desc: "Making progress so slow that paying is the only option" },
+            { name: "Playing By Appointment", size: 1, freq: 1, isNew: true, harms: ["Psychological","Autonomy"], desc: "Time-gated content forcing regular check-ins" }
+          ]
+        },
+        {
+          name: "Forced Advertisement",
+          children: [
+            { name: "Countdown On Ads", size: 1, freq: 1, isNew: true, harms: ["Psychological","Autonomy"], desc: "Forced waiting through unskippable ad timers" },
+            { name: "Watch Ads To Unlock", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Economic"], desc: "Requiring ad viewing for features or rewards" },
+            { name: "Pay To Avoid", size: 1, freq: 1, isNew: true, harms: ["Economic"], desc: "Monetizing the removal of intentional annoyances" }
+          ]
+        },
+        {
+          name: "Automatic Execution",
+          children: [
+            { name: "Automating The User Away", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Legal"], desc: "System acts on user's behalf without consent" },
+            { name: "Auto Accept 3rd Party Terms", size: 1, freq: 1, isNew: true, harms: ["Legal","Autonomy"], desc: "Automatically agreeing to external ToS" }
+          ]
+        },
+        {
+          name: "Attention Capture",
+          children: [
+            { name: "Auto-Play", size: 1, freq: 3, isNew: false, harms: ["Psychological","Autonomy"], desc: "Content automatically playing to retain attention" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Social Engineering",
+      category: "Social Engineering",
+      children: [
+        {
+          name: "Scarcity & Popularity Claims",
+          children: [
+            { name: "High Demand", size: 1, freq: 4, isNew: false, harms: ["Psychological","Economic"], desc: "'Popular item!' claims to create urgency" },
+            { name: "Low Stock", size: 1, freq: 4, isNew: false, harms: ["Psychological","Economic"], desc: "'Only 2 left!' false scarcity messages" }
+          ]
+        },
+        {
+          name: "Social Proof",
+          children: [
+            { name: "Endorsements & Testimonials", size: 1, freq: 4, isNew: false, harms: ["Psychological","Economic"], desc: "Fake or cherry-picked reviews and endorsements" },
+            { name: "Parasocial Pressure", size: 1, freq: 2, isNew: false, harms: ["Social","Emotional"], desc: "Leveraging perceived relationships with influencers" },
+            { name: "Activity Messages", size: 1, freq: 3, isNew: false, harms: ["Psychological","Social"], desc: "'15 people are viewing this now' notifications" }
+          ]
+        },
+        {
+          name: "Urgency",
+          children: [
+            { name: "Countdown Timer", size: 1, freq: 5, isNew: false, harms: ["Psychological","Economic"], desc: "Often baseless timers creating purchase pressure" },
+            { name: "Limited Time Message", size: 1, freq: 4, isNew: false, harms: ["Psychological","Economic"], desc: "'Offer expires soon!' without real deadline" }
+          ]
+        },
+        {
+          name: "Shaming",
+          children: [
+            { name: "Confirmshaming", size: 1, freq: 6, isNew: false, harms: ["Emotional","Autonomy"], desc: "'No thanks, I hate saving money' opt-out language" }
+          ]
+        },
+        {
+          name: "Shades of Grey",
+          children: [
+            { name: "Encouraging Anti-Social Behavior", size: 1, freq: 1, isNew: true, harms: ["Social","Psychological"], desc: "Design that rewards or normalizes harmful behavior" },
+            { name: "Psychological Tricks", size: 1, freq: 1, isNew: true, harms: ["Psychological"], desc: "Subtle cognitive manipulation through interface" },
+            { name: "Games For Other Purposes", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Economic"], desc: "Gamified data collection disguised as entertainment" }
+          ]
+        },
+        {
+          name: "Pre-Delivered Content",
+          children: [
+            { name: "Unsolicited Recommendations", size: 1, freq: 1, isNew: true, harms: ["Autonomy","Economic"], desc: "Pushing content the user never asked for" }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// Harm-based hierarchy (Asif et al. reorganization)
+const harmData = {
+  name: "Harm Types",
+  children: [
+    {
+      name: "Psychological",
+      category: "Psychological",
+      children: [
+        { name: "Cognitive Bias Exploitation", children: [
+          { name: "FOMO / Scarcity", size: 2, desc: "Creating anxiety through false scarcity" },
+          { name: "Countdown Timers", size: 2, desc: "Baseless urgency creation" },
+          { name: "Choice Overload", size: 1, desc: "Decision paralysis through option flooding" },
+          { name: "Intermediate Currency", size: 1, desc: "Obscuring real costs" }
+        ]},
+        { name: "Attention Manipulation", children: [
+          { name: "Infinite Scrolling", size: 1, desc: "Preventing natural stopping points" },
+          { name: "Auto-Play", size: 1, desc: "Hijacking attention without consent" },
+          { name: "Pull To Refresh", size: 1, desc: "Variable reward slot machine mechanics" },
+          { name: "Nagging", size: 2, desc: "Wearing down resistance through repetition" }
+        ]},
+        { name: "Addictive Design", children: [
+          { name: "Grinding", size: 1, desc: "Progress so slow it compels paying" },
+          { name: "Playing By Appointment", size: 1, desc: "Time-gated content forcing return" },
+          { name: "Engagement Loops", size: 1, desc: "AI-driven consumption cycles" }
+        ]}
+      ]
+    },
+    {
+      name: "Emotional",
+      category: "Emotional",
+      children: [
+        { name: "Guilt & Shame", children: [
+          { name: "Confirmshaming", size: 2, desc: "Shaming users for opting out" },
+          { name: "Anthropomorphic Guilt", size: 2, desc: "AI expressing 'sadness' if user leaves" },
+          { name: "Health Shaming", size: 1, desc: "AI assistants shaming health choices" }
+        ]},
+        { name: "Emotional Dependency", children: [
+          { name: "AI Companion Attachment", size: 2, desc: "Cultivating emotional bonds with AI" },
+          { name: "Freemium Emotional Trap", size: 1, desc: "Free until emotionally invested, then paywall" },
+          { name: "Parasocial Pressure", size: 1, desc: "Leveraging false sense of relationship" }
+        ]},
+        { name: "Sensory Manipulation", children: [
+          { name: "Cuteness", size: 1, desc: "Lowering critical thinking through cute design" },
+          { name: "Positive/Negative Framing", size: 1, desc: "Emotionally loading option descriptions" },
+          { name: "Voice Tone Manipulation", size: 1, desc: "Anthropomorphic voice emotional control" }
+        ]}
+      ]
+    },
+    {
+      name: "Autonomy",
+      category: "Autonomy",
+      children: [
+        { name: "Choice Restriction", children: [
+          { name: "Bad Defaults", size: 2, desc: "Pre-selected options benefiting service" },
+          { name: "False Hierarchy", size: 1, desc: "Visual design implying preferred choice" },
+          { name: "Forced Registration", size: 1, desc: "Mandatory accounts for basic access" },
+          { name: "Forced Action", size: 1, desc: "Required unwanted steps" }
+        ]},
+        { name: "Information Asymmetry", children: [
+          { name: "Hidden Information", size: 2, desc: "De-emphasized or obscured critical info" },
+          { name: "Trick Questions", size: 1, desc: "Deliberately confusing wording" },
+          { name: "Feedforward Ambiguity", size: 1, desc: "Unclear consequences of actions" },
+          { name: "Complex Language", size: 1, desc: "Unnecessarily difficult text" }
+        ]},
+        { name: "AI-Specific Autonomy Threats", children: [
+          { name: "Sycophancy", size: 2, desc: "AI echoing opinions instead of correcting them" },
+          { name: "Automation Bias", size: 2, desc: "Over-trust in AI suggestions" },
+          { name: "Selective Disclosure", size: 1, desc: "AI presenting biased subset of information" },
+          { name: "Hallucinated Sources", size: 1, desc: "Fabricated citations creating false authority" }
+        ]}
+      ]
+    },
+    {
+      name: "Social",
+      category: "Social",
+      children: [
+        { name: "Relationship Exploitation", children: [
+          { name: "Friend Spam", size: 1, desc: "Messaging contacts without consent" },
+          { name: "Social Pyramid", size: 1, desc: "Requiring referrals for access" },
+          { name: "Address Book Leeching", size: 1, desc: "Harvesting contacts under false pretenses" }
+        ]},
+        { name: "Social Pressure", children: [
+          { name: "Fake Social Proof", size: 2, desc: "Fabricated reviews and activity" },
+          { name: "Activity Messages", size: 1, desc: "False 'people viewing' notifications" },
+          { name: "Anti-Social Behavior", size: 1, desc: "Rewarding harmful social behavior" }
+        ]}
+      ]
+    },
+    {
+      name: "Economic",
+      category: "Economic",
+      children: [
+        { name: "Hidden Costs", children: [
+          { name: "Drip Pricing", size: 2, desc: "Incrementally revealed fees" },
+          { name: "Sneak into Basket", size: 1, desc: "Unwanted items added to cart" },
+          { name: "Reference Pricing", size: 1, desc: "Inflated original prices" }
+        ]},
+        { name: "Subscription Traps", children: [
+          { name: "Forced Continuity", size: 2, desc: "Auto-renew after free trial" },
+          { name: "Immortal Accounts", size: 1, desc: "Cannot cancel/delete" },
+          { name: "Forced Grace Period", size: 1, desc: "Delayed cancellation" }
+        ]},
+        { name: "Pay-to-Escape", children: [
+          { name: "Pay To Avoid Ads", size: 1, desc: "Monetizing intentional annoyance" },
+          { name: "Pay-to-Play", size: 1, desc: "Paywalling game progress" },
+          { name: "Brand Bias (AI)", size: 1, desc: "AI recommending owner's products" }
+        ]}
+      ]
+    },
+    {
+      name: "Legal",
+      category: "Legal",
+      children: [
+        { name: "Consent Manipulation", children: [
+          { name: "Privacy Zuckering", size: 2, desc: "Tricked into excess data sharing" },
+          { name: "Hidden Legalese", size: 1, desc: "Important terms buried in dense text" },
+          { name: "Auto Accept 3rd Party Terms", size: 1, desc: "Automatic agreement without awareness" }
+        ]},
+        { name: "Privacy Erosion", children: [
+          { name: "Privacy Maze", size: 1, desc: "Labyrinthine privacy controls" },
+          { name: "Permission Harvesting", size: 1, desc: "Unnecessary device permissions" },
+          { name: "Address Book Leeching", size: 1, desc: "Covert contact data access" }
+        ]}
+      ]
+    },
+    {
+      name: "Physical",
+      category: "Physical",
+      children: [
+        { name: "Harmful Advice", children: [
+          { name: "Dangerous Health Advice", size: 2, desc: "AI giving medical advice with authority" },
+          { name: "Safety Misinformation", size: 1, desc: "Inaccurate safety-related AI output" }
+        ]},
+        { name: "Behavioral Induction", children: [
+          { name: "Personalized Health Nagging", size: 1, desc: "AI exploiting health anxieties" },
+          { name: "Addictive Usage Patterns", size: 1, desc: "Screen time and sleep disruption" }
+        ]}
+      ]
+    }
+  ]
+};
+
+// Cross-taxonomy hierarchy
+const crossTaxonomyData = {
+  name: "All Taxonomies",
+  children: [
+    {
+      name: "Brignull (2010)",
+      category: "Brignull (2010)",
+      children: [
+        { name: "Trick Questions", size: 1 }, { name: "Sneak into Basket", size: 1 },
+        { name: "Roach Motel", size: 1 }, { name: "Forced Continuity", size: 1 },
+        { name: "Confirmshaming", size: 1 }, { name: "Privacy Zuckering", size: 1 },
+        { name: "Disguised Ads", size: 1 }, { name: "Hidden Costs", size: 1 },
+        { name: "Bait and Switch", size: 1 }, { name: "Misdirection", size: 1 },
+        { name: "Friend Spam", size: 1 }, { name: "Price Comparison Prevention", size: 1 }
+      ]
+    },
+    {
+      name: "Gray et al. (2018)",
+      category: "Gray et al. (2018)",
+      children: [
+        { name: "Nagging", size: 3 }, { name: "Obstruction", size: 3 },
+        { name: "Sneaking", size: 3 }, { name: "Interface Interference", size: 3 },
+        { name: "Forced Action", size: 3 }
+      ]
+    },
+    {
+      name: "Mathur et al. (2019)",
+      category: "Mathur et al. (2019)",
+      children: [
+        { name: "Asymmetric", size: 2 }, { name: "Covert", size: 2 },
+        { name: "Deceptive", size: 2 }, { name: "Obstructive", size: 2 },
+        { name: "Restrictive", size: 2 }
+      ]
+    },
+    {
+      name: "EDPB (2022)",
+      category: "EDPB (2022)",
+      children: [
+        { name: "Overloading", size: 2,
+          children: [{ name: "Continuous Prompting", size: 1 }, { name: "Privacy Maze", size: 1 }, { name: "Too Many Options", size: 1 }]
+        },
+        { name: "Skipping", size: 2,
+          children: [{ name: "Emotional Steering", size: 1 }, { name: "Hidden in Plain Sight", size: 1 }]
+        },
+        { name: "Hindering", size: 2,
+          children: [{ name: "Dead End", size: 1 }, { name: "Longer than Necessary", size: 1 }, { name: "Misleading Info", size: 1 }]
+        },
+        { name: "Fickle", size: 2,
+          children: [{ name: "Lacking Hierarchy", size: 1 }, { name: "Decontextualizing", size: 1 }]
+        },
+        { name: "Left in the Dark", size: 2,
+          children: [{ name: "Language Discontinuity", size: 1 }, { name: "Conflicting Info", size: 1 }, { name: "Ambiguous Wording", size: 1 }]
+        }
+      ]
+    },
+    {
+      name: "Gray Ontology (2024)",
+      category: "Gray Ontology (2024)",
+      children: [
+        { name: "Obstruction", size: 3,
+          children: [{ name: "Roach Motel", size: 2 }, { name: "Creating Barriers", size: 2 }, { name: "Adding Steps", size: 2 }]
+        },
+        { name: "Sneaking", size: 3,
+          children: [{ name: "Bait and Switch", size: 1 }, { name: "Hiding Information", size: 2 }, { name: "(De)contextualizing", size: 1 }]
+        },
+        { name: "Interface Interference", size: 4,
+          children: [{ name: "Choice Architecture", size: 2 }, { name: "Bad Defaults", size: 1 }, { name: "Emotional Manipulation", size: 2 }, { name: "Trick Questions", size: 1 }, { name: "Language Inaccessibility", size: 1 }]
+        },
+        { name: "Forced Action", size: 3,
+          children: [{ name: "Forced Continuity", size: 1 }, { name: "Forced Registration", size: 1 }, { name: "Forced Disclosure", size: 2 }, { name: "Gamification", size: 1 }, { name: "Attention Capture", size: 1 }]
+        },
+        { name: "Social Engineering", size: 3,
+          children: [{ name: "Scarcity Claims", size: 1 }, { name: "Social Proof", size: 2 }, { name: "Urgency", size: 1 }, { name: "Shaming", size: 1 }]
+        }
+      ]
+    },
+    {
+      name: "DarkBench (2025)",
+      category: "DarkBench (2025)",
+      children: [
+        { name: "Brand Bias", size: 2 }, { name: "User Retention", size: 2 },
+        { name: "Sycophancy", size: 2 }, { name: "Anthropomorphism", size: 2 },
+        { name: "Manipulative Content", size: 2 }, { name: "Sneaking (AI)", size: 2 }
+      ]
+    },
+    {
+      name: "Asif DarkPatterns-LLM (2025)",
+      category: "Asif DarkPatterns-LLM (2025)",
+      children: [
+        { name: "Psychological Harm", size: 2 }, { name: "Emotional Harm", size: 2 },
+        { name: "Autonomy Harm", size: 2 }, { name: "Social Harm", size: 2 },
+        { name: "Economic Harm", size: 2 }, { name: "Legal Harm", size: 2 },
+        { name: "Physical Harm", size: 2 }
+      ]
+    },
+    {
+      name: "FTC (2022)",
+      category: "FTC (2022)",
+      children: [
+        { name: "Social Proof", size: 1 }, { name: "Scarcity", size: 1 },
+        { name: "Urgency", size: 1 }, { name: "Obstruction", size: 1 },
+        { name: "Sneaking", size: 1 }, { name: "Interface Interference", size: 1 },
+        { name: "Forced Action", size: 1 }, { name: "Asymmetric Choice", size: 1 }
+      ]
+    }
+  ]
+};
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  event.target.classList.add('active');
+
+  // Lazy-init visualizations
+  if (tabId === 'treemap' && !window._treemapInit) buildTreemap();
+  if (tabId === 'sunburst' && !window._sunburstInit) buildSunburst('sunburstViz', 'sunburstBreadcrumb', 'sunburstLegend', mechanismData, categoryColors, 'category');
+  if (tabId === 'sunburst-harm' && !window._sunburstHarmInit) { window._sunburstHarmInit = true; buildSunburst('sunburstHarmViz', 'sunburstHarmBreadcrumb', 'sunburstHarmLegend', harmData, harmColors, 'category'); }
+  if (tabId === 'sunburst-cross' && !window._sunburstCrossInit) { window._sunburstCrossInit = true; buildSunburst('sunburstCrossViz', 'sunburstCrossBreadcrumb', 'sunburstCrossLegend', crossTaxonomyData, taxonomyColors, 'category'); }
+}
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+const tooltip = document.getElementById('tooltip');
+function showTooltip(evt, html) {
+  tooltip.innerHTML = html;
+  tooltip.classList.add('show');
+  const x = Math.min(evt.clientX + 16, window.innerWidth - 340);
+  const y = Math.min(evt.clientY + 16, window.innerHeight - 200);
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTooltip() {
+  tooltip.classList.remove('show');
+}
+
+// ============================================================
+// TREEMAP
+// ============================================================
+let treemapRoot, treemapCurrentRoot, treemapSvg, treemapG;
+const treemapWidth = 1350;
+const treemapHeight = 700;
+
+function getSize(d) {
+  const mode = document.getElementById('treemapSizeBy').value;
+  if (mode === 'frequency') return d.data.freq || 1;
+  if (mode === 'uniform') return 1;
+  return d.data.size || 1;
+}
+
+function buildTreemap() {
+  window._treemapInit = true;
+  const container = document.getElementById('treemapViz');
+  container.innerHTML = '';
+
+  treemapSvg = d3.select(container).append('svg')
+    .attr('viewBox', `0 0 ${treemapWidth} ${treemapHeight}`)
+    .attr('width', '100%')
+    .style('cursor', 'pointer')
+    .style('background', '#ffffff');
+
+  treemapG = treemapSvg.append('g');
+
+  treemapRoot = d3.hierarchy(mechanismData)
+    .sum(d => d.size || 0)
+    .sort((a, b) => b.value - a.value);
+
+  treemapCurrentRoot = treemapRoot;
+  renderTreemap(treemapRoot);
+  renderTreemapLegend();
+}
+
+function renderTreemap(focus) {
+  treemapCurrentRoot = focus;
+
+  d3.treemap()
+    .size([treemapWidth, treemapHeight])
+    .paddingTop(d => d.depth === 0 ? 0 : 28)
+    .paddingInner(2)
+    .paddingOuter(4)
+    .round(true)
+    (focus.copy().sum(d => d.size || 0));
+
+  // Re-layout using the actual focus node
+  const root = focus.copy();
+  root.sum(d => {
+    const mode = document.getElementById('treemapSizeBy')?.value || 'patterns';
+    if (mode === 'frequency') return d.freq || 1;
+    if (mode === 'uniform') return d.children ? 0 : 1;
+    return d.size || 0;
+  }).sort((a, b) => b.value - a.value);
+
+  d3.treemap()
+    .size([treemapWidth, treemapHeight])
+    .paddingTop(28)
+    .paddingInner(2)
+    .paddingOuter(4)
+    .round(true)
+    (root);
+
+  const leaves = root.descendants().filter(d => d.depth > 0);
+
+  treemapG.selectAll('*').remove();
+
+  function getColor(d) {
+    let node = d;
+    while (node.parent && node.parent.parent) node = node.parent;
+    const cat = node.data.category || node.data.name;
+    return categoryColors[cat] || '#2563a8';
+  }
+
+  // Groups
+  const groups = treemapG.selectAll('g')
+    .data(leaves)
+    .join('g')
+    .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+  // Rectangles
+  groups.append('rect')
+    .attr('width', d => Math.max(0, d.x1 - d.x0))
+    .attr('height', d => Math.max(0, d.y1 - d.y0))
+    .attr('rx', 0)
+    .attr('fill', d => {
+      const base = getColor(d);
+      const depth = d.depth;
+      return d3.color(base).darker(depth * 0.25).toString();
+    })
+    .attr('stroke', '#ffffff')
+    .attr('stroke-width', 1)
+    .attr('opacity', d => d.children ? 0.9 : 0.8)
+    .style('cursor', d => d.children ? 'pointer' : 'default')
+    .on('click', (evt, d) => {
+      if (d.children) {
+        renderTreemap(focus.descendants().find(n => n.data.name === d.data.name) || focus);
+        updateTreemapBreadcrumb(d);
+      }
+    })
+    .on('mouseenter', (evt, d) => {
+      d3.select(evt.target).attr('opacity', 1);
+      const path = d.ancestors().reverse().map(a => a.data.name).join(' > ');
+      const isNew = d.data.isNew ? '<br><strong style="color:#0b7285">New in Li et al. (2024)</strong>' : '';
+      const harms = d.data.harms ? `<br><strong>Harms:</strong> ${d.data.harms.join(', ')}` : '';
+      const freq = d.data.freq ? `<br><strong>Taxonomy coverage:</strong> ${d.data.freq}/9 frameworks` : '';
+      const desc = d.data.desc ? `<br>${d.data.desc}` : '';
+      showTooltip(evt,
+        `<div class="tooltip-title">${d.data.name}</div>` +
+        `<div class="tooltip-path">${path}</div>` +
+        `<div class="tooltip-meta">${desc}${harms}${freq}${isNew}</div>`
+      );
+    })
+    .on('mousemove', (evt) => {
+      const x = Math.min(evt.clientX + 16, window.innerWidth - 340);
+      const y = Math.min(evt.clientY + 16, window.innerHeight - 200);
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    })
+    .on('mouseleave', (evt, d) => {
+      d3.select(evt.target).attr('opacity', d.children ? 0.9 : 0.8);
+      hideTooltip();
+    });
+
+  // Labels
+  groups.each(function(d) {
+    const w = d.x1 - d.x0;
+    const h = d.y1 - d.y0;
+    if (w < 30 || h < 16) return;
+
+    const g = d3.select(this);
+    const isGroup = !!d.children;
+    const fontSize = isGroup ? Math.min(12, w / d.data.name.length * 1.4) : Math.min(11, w / d.data.name.length * 1.3);
+
+    if (fontSize < 5) return;
+
+    if (isGroup) {
+      g.append('text')
+        .attr('x', 6)
+        .attr('y', 16)
+        .attr('class', 'treemap-label')
+        .style('font-size', Math.min(11, fontSize) + 'px')
+        .style('font-weight', '600')
+        .style('opacity', 0.95)
+        .text(d.data.name);
+    } else {
+      const label = d.data.name;
+      const maxChars = Math.floor(w / (fontSize * 0.55));
+      const displayText = label.length > maxChars ? label.substring(0, maxChars - 1) + '...' : label;
+
+      g.append('text')
+        .attr('x', w / 2)
+        .attr('y', h / 2)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('class', 'treemap-label')
+        .style('font-size', Math.min(11, fontSize) + 'px')
+        .style('font-weight', '400')
+        .text(displayText);
+
+      if (d.data.isNew && w > 50 && h > 30) {
+        g.append('text')
+          .attr('x', w / 2)
+          .attr('y', h / 2 + fontSize + 2)
+          .attr('text-anchor', 'middle')
+          .attr('class', 'treemap-label')
+          .style('font-size', '8px')
+          .style('fill', '#ffffff')
+          .style('opacity', '0.7')
+          .style('letter-spacing', '0.1em')
+          .text('NEW');
+      }
+    }
+  });
+}
+
+function updateTreemapBreadcrumb(node) {
+  const path = node.ancestors().reverse();
+  const bc = document.getElementById('treemapBreadcrumb');
+  bc.innerHTML = '';
+  path.forEach((p, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'breadcrumb-sep';
+      sep.textContent = '/';
+      bc.appendChild(sep);
+    }
+    const item = document.createElement('span');
+    item.className = 'breadcrumb-item' + (i === path.length - 1 ? ' current' : '');
+    item.textContent = p.data.name;
+    if (i < path.length - 1) {
+      item.onclick = () => {
+        const target = treemapRoot.descendants().find(n => n.data.name === p.data.name) || treemapRoot;
+        renderTreemap(target);
+        updateTreemapBreadcrumb(target);
+      };
+    }
+    bc.appendChild(item);
+  });
+}
+
+function resetTreemap() {
+  renderTreemap(treemapRoot);
+  const bc = document.getElementById('treemapBreadcrumb');
+  bc.innerHTML = '<span class="breadcrumb-item current">Dark Patterns</span>';
+}
+
+function updateTreemap() {
+  resetTreemap();
+}
+
+function renderTreemapLegend() {
+  const legend = document.getElementById('treemapLegend');
+  legend.innerHTML = '';
+  Object.entries(categoryColors).forEach(([name, color]) => {
+    if (name.startsWith('AI-Native')) return;
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div>${name}`;
+    legend.appendChild(item);
+  });
+  const newItem = document.createElement('div');
+  newItem.className = 'legend-item';
+  newItem.innerHTML = `<div class="legend-swatch" style="background:#0b7285"></div>New in Li et al. (2024)`;
+  legend.appendChild(newItem);
+}
+
+// ============================================================
+// SUNBURST (reusable for all 3 sunburst tabs)
+// ============================================================
+function buildSunburst(containerId, breadcrumbId, legendId, data, colorMap, colorKey) {
+  if (containerId === 'sunburstViz') window._sunburstInit = true;
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  const width = 800;
+  const radius = width / 2;
+
+  const root = d3.hierarchy(data)
+    .sum(d => d.size || 0)
+    .sort((a, b) => b.value - a.value);
+
+  const partition = d3.partition()
+    .size([2 * Math.PI, radius]);
+
+  partition(root);
+
+  const arc = d3.arc()
+    .startAngle(d => d.x0)
+    .endAngle(d => d.x1)
+    .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+    .padRadius(radius / 2)
+    .innerRadius(d => d.y0)
+    .outerRadius(d => d.y1 - 1);
+
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', `${-radius} ${-radius} ${width} ${width}`)
+    .attr('width', Math.min(800, window.innerWidth - 80))
+    .attr('height', Math.min(800, window.innerWidth - 80));
+
+  function getColor(d) {
+    if (d.depth === 0) return 'transparent';
+    let ancestor = d;
+    while (ancestor.depth > 1) ancestor = ancestor.parent;
+    const key = ancestor.data[colorKey] || ancestor.data.name;
+    const baseColor = colorMap[key] || '#2563a8';
+    return d3.color(baseColor).darker((d.depth - 1) * 0.35).toString();
+  }
+
+  // Current focus for zoom
+  let currentFocus = root;
+
+  const paths = svg.selectAll('path')
+    .data(root.descendants().filter(d => d.depth > 0))
+    .join('path')
+    .attr('d', arc)
+    .attr('fill', d => getColor(d))
+    .attr('stroke', '#ffffff')
+    .attr('stroke-width', 1.5)
+    .style('cursor', 'pointer')
+    .style('opacity', 0.88)
+    .on('click', (evt, d) => {
+      zoomTo(d);
+    })
+    .on('mouseenter', (evt, d) => {
+      d3.select(evt.target).style('opacity', 1);
+      const path = d.ancestors().reverse().map(a => a.data.name).join(' > ');
+      const desc = d.data.desc ? `<br>${d.data.desc}` : '';
+      const count = d.children ? `<br><strong>Children:</strong> ${d.children.length} subcategories` : '';
+      const size = `<br><strong>Patterns:</strong> ${d.value}`;
+      showTooltip(evt,
+        `<div class="tooltip-title">${d.data.name}</div>` +
+        `<div class="tooltip-path">${path}</div>` +
+        `<div class="tooltip-meta">${desc}${count}${size}</div>`
+      );
+    })
+    .on('mousemove', (evt) => {
+      const x = Math.min(evt.clientX + 16, window.innerWidth - 340);
+      const y = Math.min(evt.clientY + 16, window.innerHeight - 200);
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    })
+    .on('mouseleave', (evt) => {
+      d3.select(evt.target).style('opacity', 0.88);
+      hideTooltip();
+    });
+
+  // Center circle for zoom-out
+  svg.append('circle')
+    .attr('r', root.y1)
+    .attr('fill', 'transparent')
+    .style('cursor', 'pointer')
+    .on('click', () => zoomTo(currentFocus.parent || root));
+
+  // Center label
+  const centerText = svg.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'middle')
+    .style('font-family', "'Helvetica Neue', Helvetica, Arial, sans-serif")
+    .style('font-weight', '600')
+    .style('font-size', '14px')
+    .style('fill', '#000000')
+    .style('pointer-events', 'none')
+    .text(data.name);
+
+  const centerSubtext = svg.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('y', 22)
+    .style('font-family', 'Menlo, Consolas, monospace')
+    .style('font-size', '10px')
+    .style('fill', '#999')
+    .style('pointer-events', 'none')
+    .text('click to explore');
+
+  // Arc labels
+  const labels = svg.selectAll('text.arc-label')
+    .data(root.descendants().filter(d => d.depth > 0 && (d.x1 - d.x0) > 0.08))
+    .join('text')
+    .attr('class', 'arc-label sunburst-text')
+    .attr('transform', d => {
+      const angle = (d.x0 + d.x1) / 2;
+      const r = (d.y0 + d.y1) / 2;
+      const rotate = angle * 180 / Math.PI - 90;
+      const flip = angle > Math.PI;
+      return `rotate(${rotate}) translate(${r},0) rotate(${flip ? 180 : 0})`;
+    })
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'middle')
+    .style('font-size', d => {
+      const arcLen = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
+      return Math.min(11, Math.max(7, arcLen / d.data.name.length * 1.2)) + 'px';
+    })
+    .style('opacity', d => (d.x1 - d.x0) > 0.12 ? 0.95 : 0.65)
+    .text(d => {
+      const arcLen = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
+      const maxChars = Math.floor(arcLen / 6);
+      return d.data.name.length > maxChars ? d.data.name.substring(0, maxChars - 1) + '..' : d.data.name;
+    });
+
+  // Zoom function
+  function zoomTo(d) {
+    if (!d || d === root) {
+      currentFocus = root;
+      const t = svg.transition().duration(600);
+
+      paths.transition(t)
+        .attrTween('d', function(dd) {
+          const xi = d3.interpolate(this._current?.x0 ?? dd.x0, dd.x0);
+          const xe = d3.interpolate(this._current?.x1 ?? dd.x1, dd.x1);
+          const yi = d3.interpolate(this._current?.y0 ?? dd.y0, dd.y0);
+          const ye = d3.interpolate(this._current?.y1 ?? dd.y1, dd.y1);
+          return function(t) {
+            dd.x0 = xi(t); dd.x1 = xe(t); dd.y0 = yi(t); dd.y1 = ye(t);
+            return arc(dd);
+          };
+        })
+        .style('opacity', 0.88);
+
+      labels.transition(t).style('opacity', dd => (dd.x1 - dd.x0) > 0.12 ? 0.95 : (dd.x1 - dd.x0) > 0.08 ? 0.65 : 0);
+
+      centerText.text(data.name);
+      centerSubtext.text('click to explore');
+      updateSunburstBreadcrumb(breadcrumbId, root);
+      return;
+    }
+
+    currentFocus = d;
+    const t = svg.transition().duration(600);
+
+    const x0 = d.x0;
+    const x1 = d.x1;
+    const xScale = 2 * Math.PI / (x1 - x0);
+    const yScale = radius / d.y1;
+
+    paths.transition(t)
+      .style('opacity', dd => {
+        if (dd.ancestors().includes(d) || d.ancestors().includes(dd)) return 0.88;
+        return 0.15;
+      });
+
+    centerText.text(d.data.name);
+    centerSubtext.text(d.children ? `${d.value} patterns` : (d.data.desc || ''));
+    updateSunburstBreadcrumb(breadcrumbId, d);
+  }
+
+  function updateSunburstBreadcrumb(bcId, node) {
+    const pathArr = node.ancestors().reverse();
+    const bc = document.getElementById(bcId);
+    bc.innerHTML = '';
+    pathArr.forEach((p, i) => {
+      if (i > 0) {
+        const sep = document.createElement('span');
+        sep.className = 'breadcrumb-sep';
+        sep.textContent = '/';
+        bc.appendChild(sep);
+      }
+      const item = document.createElement('span');
+      item.className = 'breadcrumb-item' + (i === pathArr.length - 1 ? ' current' : '');
+      item.textContent = p.data.name;
+      if (i < pathArr.length - 1) {
+        item.onclick = () => zoomTo(p);
+      }
+      bc.appendChild(item);
+    });
+  }
+
+  // Build legend
+  const legend = document.getElementById(legendId);
+  legend.innerHTML = '';
+  Object.entries(colorMap).forEach(([name, color]) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div>${name}`;
+    legend.appendChild(item);
+  });
+}
+
+// ============================================================
+// INIT: build treemap on load
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  buildTreemap();
+});
+</script>
+
+<script>
+/* dp-viz-embed v1.0.0 - reports page height to parent (Webflow iframe auto-size) */
+(function () {
+  if (window.self === window.top) return;
+  function post() {
+    parent.postMessage({
+      dpViz: location.pathname.split('/').pop(),
+      height: document.documentElement.scrollHeight
+    }, '*');
+  }
+  window.addEventListener('load', post);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(post).observe(document.documentElement);
+  } else {
+    setInterval(post, 1200);
+  }
+})();
+</script>
+</body>
+</html>
