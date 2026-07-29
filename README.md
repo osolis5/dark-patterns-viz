@@ -13,8 +13,9 @@ Embedded via iframe on the project detail page at
 |------|------|----------|
 | 01 — Taxonomy Map | `taxonomy-map.html` | Interactive filterable map of every dark pattern in the corpus, annotated by taxonomy, mechanism, harm, AI-specificity, modality, and cognitive bias |
 | 02 — Evolution | `taxonomy-evolution.html` | Timeline of how dark pattern taxonomies evolved from web interface tricks to AI-specific frameworks |
+| 03 — Network | `taxonomy-network.html` | Force-directed graph (D3 v7) linking all patterns to the taxonomies that cite them |
 
-All pages are self-contained (no external dependencies).
+All pages are self-contained (only `taxonomy-network.html` loads D3 from the d3js.org CDN).
 Each page includes a `postMessage` snippet that reports its height to the parent
 window so the embedding site can auto-size the iframe.
 
