@@ -364,13 +364,21 @@
     .bar-label { width: 140px; font-size: 11px; }
   }
 </style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* archive-index-align v1.0 — match oscarsolis.design typography */
+body { font-family: Arial, sans-serif; color: #101010; }
+.page, .container { max-width: none; margin: 0; padding: 0; }
+h2, h3 { font-family: Arial, sans-serif; color: #101010; }
+p { font-family: Arial, sans-serif; }
+.section { margin: 0; padding: 0; border: none; }
+#netViz { border: none !important; }
+</style>
 </head>
 <body>
 <div class="page">
 <div class="section">
-  <div class="section-label">09 &mdash; Network</div>
-  <h2>Taxonomy Network</h2>
-  <p class="section-intro">A force-directed graph linking every dark pattern in the corpus to the source taxonomies that cite it. Taxonomy nodes are blue; pattern nodes are gray. Drag to rearrange, scroll or use the controls to zoom, and click any node to isolate its connections. Click the background to reset.</p>
   <div id="netViz" style="border:1px solid #e0e0e0;"></div>
 </div>
 </div>

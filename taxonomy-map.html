@@ -364,13 +364,29 @@
     .bar-label { width: 140px; font-size: 11px; }
   }
 </style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* archive-index-align v1.0 — match oscarsolis.design typography */
+body { font-family: Arial, sans-serif; color: #101010; }
+.page, .container { max-width: none; margin: 0; padding: 0; }
+h2, h3 { font-family: Arial, sans-serif; color: #101010; }
+p { font-family: Arial, sans-serif; }
+.section { margin: 0; padding: 0; border: none; }
+.filter-group-label, .pattern-meso, #matchCount, #totalCount,
+[style*="Menlo"] { font-family: 'IBM Plex Mono', Menlo, monospace !important; }
+.filter-group-label { font-size: 12px; letter-spacing: 1.44px; color: #6b6b6b; text-transform: uppercase; }
+.filter-btn, button { font-family: Arial, sans-serif; }
+.filter-btn { border-color: #e3e3e3; color: #101010; }
+#patternGrid { background: #e3e3e3; border-color: #e3e3e3; }
+#clearFilters { border-color: #e3e3e3; color: #6b6b6b; }
+#filterPanel > div:last-child { border-top-color: #e3e3e3 !important; }
+#detailPanel { border-color: #101010; }
+</style>
 </head>
 <body>
 <div class="page">
 <div class="section">
-  <div class="section-label">08 &mdash; Explorer</div>
-  <h2>Interactive Taxonomy Map</h2>
-  <p class="section-intro">Every dark pattern in the corpus, annotated with its source taxonomies, mechanism type, harm dimensions, AI-specificity, modality, and cognitive bias exploited. Toggle any characteristic to filter. Active filters combine with AND logic -- only patterns matching all active filters are shown. Use this to find intersections, gaps, and relationships across frameworks.</p>
 
   <!-- Filter Controls -->
   <div id="filterPanel" style="margin-bottom:32px;">
