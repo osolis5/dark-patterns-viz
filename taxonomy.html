@@ -1705,18 +1705,18 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>
 
 <script>
-/* dp-viz-embed v1.0.0 - reports page height to parent (Webflow iframe auto-size) */
+/* dp-viz-embed v1.0.1 - reports page height to parent (Webflow iframe auto-size) */
 (function () {
   if (window.self === window.top) return;
   function post() {
     parent.postMessage({
       dpViz: location.pathname.split('/').pop(),
-      height: document.documentElement.scrollHeight
+      height: Math.ceil(document.body.getBoundingClientRect().height)
     }, '*');
   }
   window.addEventListener('load', post);
   if ('ResizeObserver' in window) {
-    new ResizeObserver(post).observe(document.documentElement);
+    new ResizeObserver(post).observe(document.body);
   } else {
     setInterval(post, 1200);
   }
