@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Taxonomy Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 40px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 64px;
+    border-bottom: 3px solid #000;
+    padding-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  header .lead {
+    font-size: 16px;
+    color: #555;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-label {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 8px;
+  }
+
+  .section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .section-intro {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 24px;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #555;
+    padding: 10px 12px;
+    border-bottom: 2px solid #000;
+    vertical-align: bottom;
+  }
+
+  table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  table tr:hover td {
+    background: #fafafa;
+  }
+
+  table th.rotate {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    height: 120px;
+    padding: 8px 4px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  table th.center, table td.center {
+    text-align: center;
+  }
+
+  .mono {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  /* Dot indicators */
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+  }
+
+  .dot.full {
+    background: #000;
+  }
+
+  .dot.partial {
+    background: #bbb;
+  }
+
+  .dot.empty {
+    background: #eee;
+  }
+
+  .dot.gap {
+    background: #fff;
+    border: 1.5px solid #c23b22;
+  }
+
+  /* Strength meter */
+  .strength {
+    display: flex;
+    gap: 2px;
+  }
+
+  .strength-bar {
+    width: 6px;
+    height: 16px;
+    background: #eee;
+  }
+
+  .strength-bar.filled {
+    background: #000;
+  }
+
+  /* Gap highlight */
+  .gap-row td {
+    background: #fff8f6 !important;
+  }
+
+  .gap-row td:first-child {
+    border-left: 3px solid #c23b22;
+  }
+
+  .gap-tag {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #c23b22;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .opp-tag {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #0e8a63;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid;
+    gap: 1px;
+    background: #ddd;
+    border: 1px solid #ddd;
+  }
+
+  .heatmap-cell {
+    padding: 8px;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .heatmap-header {
+    background: #f5f5f5;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    padding: 10px 8px;
+  }
+
+  .heatmap-row-header {
+    background: #f5f5f5;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: left;
+    padding: 10px 12px;
+  }
+
+  .heat-0 { background: #fff; color: #ccc; }
+  .heat-1 { background: #f5f5f5; color: #999; }
+  .heat-2 { background: #e8e8e8; color: #666; }
+  .heat-3 { background: #d0d0d0; color: #333; }
+  .heat-4 { background: #aaa; color: #fff; }
+  .heat-5 { background: #666; color: #fff; }
+  .heat-6 { background: #333; color: #fff; }
+  .heat-7 { background: #000; color: #fff; }
+
+  /* Opportunity cards */
+  .opp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .opp-card {
+    border: 1px solid #ddd;
+    padding: 24px;
+  }
+
+  .opp-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .opp-card .priority {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .opp-card .priority.high { color: #c23b22; }
+  .opp-card .priority.medium { color: #d4930d; }
+
+  .opp-card p {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .opp-card .evidence {
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* Bar charts */
+  .bar-chart {
+    margin-bottom: 8px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .bar-label {
+    width: 220px;
+    font-size: 12px;
+    text-align: right;
+    padding-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 14px;
+    background: #f0f0f0;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: #000;
+    transition: width 0.8s ease-out;
+  }
+
+  .bar-val {
+    width: 60px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #999;
+    padding-left: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Annotation */
+  .annotation {
+    font-size: 12px;
+    color: #777;
+    font-style: italic;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .callout {
+    background: #f5f5f5;
+    border-left: 3px solid #000;
+    padding: 16px 20px;
+    margin: 24px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .callout strong {
+    font-weight: 700;
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 48px 0;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 2px solid #000;
+    padding-top: 24px;
+    margin-top: 64px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page { padding: 32px 20px; }
+    .opp-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 24px; }
+    table { font-size: 11px; }
+    .bar-label { width: 140px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="section">
+  <div class="section-label">08 &mdash; Explorer</div>
+  <h2>Interactive Taxonomy Map</h2>
+  <p class="section-intro">Every dark pattern in the corpus, annotated with its source taxonomies, mechanism type, harm dimensions, AI-specificity, modality, and cognitive bias exploited. Toggle any characteristic to filter. Active filters combine with AND logic -- only patterns matching all active filters are shown. Use this to find intersections, gaps, and relationships across frameworks.</p>
+
+  <!-- Filter Controls -->
+  <div id="filterPanel" style="margin-bottom:32px;">
+    <div id="filterGroups"></div>
+    <div style="display:flex; align-items:center; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid #eee;">
+      <div style="font-family:Menlo,Consolas,monospace; font-size:13px;"><span id="matchCount" style="font-weight:700">0</span> / <span id="totalCount">0</span> patterns</div>
+      <button id="clearFilters" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; background:none; border:1px solid #ccc; padding:6px 14px; cursor:pointer; color:#555;">Clear All Filters</button>
+      <div style="flex:1"></div>
+      <label style="font-size:12px; color:#777; display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="showOnlyGaps" style="cursor:pointer;"> Highlight patterns in &le;2 taxonomies (emerging / under-studied)
+      </label>
+    </div>
+  </div>
+
+  <!-- Pattern Grid -->
+  <div id="patternGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:1px; background:#ddd; border:1px solid #ddd;"></div>
+
+  <!-- Detail Panel -->
+  <div id="detailPanel" style="display:none; margin-top:24px; border:1px solid #000; padding:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <h3 id="detailName" style="font-size:18px; font-weight:700;"></h3>
+      <button onclick="document.getElementById('detailPanel').style.display='none'" style="background:none; border:1px solid #ccc; padding:4px 10px; cursor:pointer; font-family:'Helvetica Neue',sans-serif; font-size:12px;">Close</button>
+    </div>
+    <p id="detailDesc" style="font-size:13px; color:#555; margin:8px 0 16px; line-height:1.6;"></p>
+    <div id="detailMeta" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;"></div>
+  </div>
+</div>
+</div>
+<style>
+  /* Filter styles */
+  .filter-group {
+    margin-bottom: 16px;
+  }
+
+  .filter-group-label {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+
+  .filter-group-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .filter-btn {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+
+  .filter-btn:hover {
+    border-color: #999;
+    color: #000;
+  }
+
+  .filter-btn.active {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+  }
+
+  /* Pattern card */
+  .pattern-card {
+    background: #fff;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: opacity 0.2s, background 0.15s;
+    position: relative;
+  }
+
+  .pattern-card:hover {
+    background: #f8f8f8;
+  }
+
+  .pattern-card.dimmed {
+    opacity: 0.12;
+  }
+
+  .pattern-card.gap-highlight {
+    background: #fffbf5;
+  }
+
+  .pattern-card.gap-highlight.dimmed {
+    opacity: 0.12;
+    background: #fff;
+  }
+
+  .pc-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .pc-mechanism {
+    font-size: 10px;
+    font-family: Menlo, Consolas, monospace;
+    color: #999;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+
+  .pc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .pc-tag {
+    font-size: 9px;
+    font-family: Menlo, Consolas, monospace;
+    padding: 2px 5px;
+    border: 1px solid #e0e0e0;
+    color: #777;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+  }
+
+  .pc-tag.taxonomy {
+    background: #f5f5f5;
+    color: #555;
+  }
+
+  .pc-tag.harm {
+    border-color: #ddd;
+    color: #888;
+  }
+
+  .pc-tag.ai-native {
+    border-color: #000;
+    color: #000;
+    font-weight: 600;
+  }
+
+  .pc-tag.ai-applicable {
+    border-color: #999;
+    color: #666;
+  }
+
+  .pc-count {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: #bbb;
+  }
+
+  /* Detail panel lists */
+  .detail-list-label {
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  .detail-list {
+    list-style: none;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.8;
+  }
+
+  .detail-list li::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #000;
+    margin-right: 8px;
+    position: relative;
+    top: -1px;
+  }
+</style>
+<script>
+(function() {
+  // ============================================================
+  // COMPLETE PATTERN DATABASE
+  // ============================================================
+  const patterns = [
+    // OBSTRUCTION
+    { name:"Immortal Accounts", desc:"Preventing account or data deletion, making it extremely difficult or impossible to leave a service.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Autonomy","Legal"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Dead End", desc:"Navigating to a point in a process with no clear way to proceed or complete the intended action.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Forced Grace Period", desc:"Mandatory waiting period before a cancellation takes effect, during which charges may continue.", mechanism:"Obstruction", meso:"Roach Motel", harms:["Economic","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Price Comparison Prevention", desc:"Making it impossible to compare prices with competitors by obfuscating pricing structures.", mechanism:"Obstruction", meso:"Creating Barriers", harms:["Economic","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default","Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC"], isNew:false },
+    { name:"Intermediate Currency", desc:"Using virtual tokens or points to obscure the real monetary cost of purchases.", mechanism:"Obstruction", meso:"Creating Barriers", harms:["Economic","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Privacy Maze", desc:"Burying privacy and data controls in labyrinthine navigation structures.", mechanism:"Obstruction", meso:"Adding Steps", harms:["Autonomy","Legal"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Labyrinthine Navigation", desc:"Deliberately complex navigation designed to discourage users from completing an action like cancellation.", mechanism:"Obstruction", meso:"Adding Steps", harms:["Autonomy","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+
+    // SNEAKING
+    { name:"Disguised Ad", desc:"Advertisements camouflaged as content, navigation elements, or system notifications.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Autonomy","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Brignull","Gray","Li DPAF"], isNew:false },
+    { name:"Only Initial Payouts", desc:"Rewarding users early in an engagement loop then cutting off rewards to create sunk-cost dependency.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Cannot Redeem", desc:"Allowing users to earn rewards or points that are practically impossible to actually redeem.", mechanism:"Sneaking", meso:"Bait and Switch", harms:["Economic","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost","Framing"], taxonomies:["Brignull","Li DPAF"], isNew:true },
+    { name:"Sneak into Basket", desc:"Adding items, services, or insurance to a user's cart without their explicit consent.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Drip Pricing / Hidden Costs", desc:"Revealing additional fees incrementally during a purchase flow, after the user is already committed.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Sunk Cost","Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur","EDPB","Asif LLM"], isNew:false },
+    { name:"Reference Pricing", desc:"Displaying inflated 'original' prices to make discounts appear larger than they are.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Framing","Social Proof"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Hidden Legalese Stipulations", desc:"Burying consequential terms in dense legal text that users are unlikely to read.", mechanism:"Sneaking", meso:"Hiding Information", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Conflicting Information", desc:"Presenting contradictory information across different parts of an interface or conversation.", mechanism:"Sneaking", meso:"(De)contextualizing", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Information Without Context", desc:"Displaying data or claims without the framing needed to interpret them accurately.", mechanism:"Sneaking", meso:"(De)contextualizing", harms:["Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+
+
+    // INTERFACE INTERFERENCE
+    { name:"False Hierarchy", desc:"Visual design that implies one option is recommended or superior through layout, size, or positioning.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Visual Prominence", desc:"Making the business-preferred option visually dominant through color, size, or contrast.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Bundling", desc:"Grouping wanted items with unwanted ones so they must be purchased or accepted together.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Pressured Selling", desc:"Aggressive upselling during a purchase flow, especially at checkout or confirmation.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Persuasive Language", desc:"Emotionally loaded or biased wording designed to steer user decisions.", mechanism:"Interface Interference", meso:"Choice Architecture", harms:["Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Framing"], taxonomies:["Li DPAF","DarkBench"], isNew:true },
+    { name:"Small / Moving Close Button", desc:"Dismiss or close controls that are difficult to target, small, or shift position.", mechanism:"Interface Interference", meso:"Hard To Close", harms:["Autonomy","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pre-checked Options", desc:"Options pre-selected to benefit the service, requiring active opt-out rather than opt-in.", mechanism:"Interface Interference", meso:"Bad Defaults", harms:["Autonomy","Legal","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","Mathur","EDPB","FTC"], isNew:false },
+    { name:"Cuteness", desc:"Using cute imagery, mascots, or animations to lower critical thinking and build false trust.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Positive / Negative Framing", desc:"Framing the same choice differently depending on whether the service wants the user to accept or decline.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Visual UI","Conversational","Voice"], biases:["Framing"], taxonomies:["Gray","Li DPAF","Asif LLM","DarkBench"], isNew:false },
+    { name:"Fear of Missing Out", desc:"Creating anxiety about potentially missing a deal, experience, or social event.", mechanism:"Interface Interference", meso:"Emotional Manipulation", harms:["Emotional","Economic","Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Confusing Wording / Trick Questions", desc:"Double negatives, misleading phrasing, or deliberately confusing language in consent flows.", mechanism:"Interface Interference", meso:"Trick Questions", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing","Default"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Too Many Options / Choice Overload", desc:"Overwhelming users with excessive choices to cause decision paralysis, driving them to accept defaults.", mechanism:"Interface Interference", meso:"Choice Overload", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational","Recommender"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Obscured Controls", desc:"Important options (unsubscribe, decline, settings) visually hidden or severely de-emphasized.", mechanism:"Interface Interference", meso:"Hidden Information", harms:["Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default","Framing"], taxonomies:["Gray","Li DPAF","EDPB","FTC"], isNew:false },
+    { name:"Wrong Language", desc:"Presenting critical information in a language the user may not read, especially in consent flows.", mechanism:"Interface Interference", meso:"Language Inaccessibility", harms:["Autonomy","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Complex Language", desc:"Unnecessarily complex jargon or legalese in information that directly affects user decisions.", mechanism:"Interface Interference", meso:"Language Inaccessibility", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Unclear Consequences", desc:"Not telling the user what an action (button click, voice command) will actually do before they take it.", mechanism:"Interface Interference", meso:"Feedforward Ambiguity", harms:["Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Addictive Design", desc:"Deliberately habit-forming interaction loops using variable reward schedules.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological","Emotional"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational","Recommender"], biases:["FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Infinite Scrolling", desc:"Endless content feed that prevents natural stopping points, exploiting completion bias.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Recommender"], biases:["FOMO","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pull To Refresh", desc:"Variable reward mechanism similar to slot machines, creating anticipatory checking behavior.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["FOMO"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Reduced Friction", desc:"One-click purchasing or actions that bypass deliberation, removing natural pause points.", mechanism:"Interface Interference", meso:"Engaging Strategy", harms:["Economic","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+
+    // FORCED ACTION
+    { name:"Nagging", desc:"Repeated prompts, notifications, or interruptions designed to wear down user resistance over time.", mechanism:"Forced Action", meso:"Nagging", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Default"], taxonomies:["Gray","Li DPAF","EDPB","FTC"], isNew:false },
+    { name:"Auto-Renew Trap / Forced Continuity", desc:"Charging users after a free trial ends without clear warning or easy cancellation.", mechanism:"Forced Action", meso:"Forced Continuity", harms:["Economic","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Sunk Cost"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Forced Registration", desc:"Requiring account creation to access basic features or complete a purchase.", mechanism:"Forced Action", meso:"Forced Registration", harms:["Autonomy","Legal"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF","FTC"], isNew:false },
+    { name:"Privacy Zuckering", desc:"Tricking users into sharing more personal data than intended through confusing privacy controls.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Legal","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Framing"], taxonomies:["Brignull","Gray","Li DPAF","EDPB"], isNew:false },
+    { name:"Friend Spam", desc:"Sending messages to a user's contacts without fully informed consent.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Social"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Brignull","Gray","Li DPAF"], isNew:false },
+    { name:"Address Book Leeching", desc:"Accessing contacts under the guise of 'finding friends' while harvesting the full address book.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Legal","Social"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Social Pyramid", desc:"Requiring user referrals to unlock features, access content, or progress.", mechanism:"Forced Action", meso:"Forced Disclosure", harms:["Social","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Permission Harvesting", desc:"Requesting device permissions (camera, location, contacts) far beyond what the app needs.", mechanism:"Forced Action", meso:"Granting & Interaction", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pay-to-Play", desc:"Paywalling progress in game-like experiences so that advancement requires purchase.", mechanism:"Forced Action", meso:"Gamification", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Grinding", desc:"Making progress so tediously slow that paying becomes the only practical option.", mechanism:"Forced Action", meso:"Gamification", harms:["Psychological","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Playing By Appointment", desc:"Time-gated content that forces users to return at specific intervals or lose progress.", mechanism:"Forced Action", meso:"Gamification", harms:["Psychological","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["FOMO","Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Countdown On Ads", desc:"Forced waiting through unskippable advertisement timers.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Psychological","Autonomy"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Watch Ads To Unlock", desc:"Requiring users to view advertisements to access features or earn rewards.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Autonomy","Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Sunk Cost"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Pay To Avoid Ads", desc:"Monetizing the removal of intentionally placed annoyances.", mechanism:"Forced Action", meso:"Forced Advertisement", harms:["Economic"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Automating The User Away", desc:"System acts on user's behalf without explicit consent, removing human agency from decisions.", mechanism:"Forced Action", meso:"Automatic Execution", harms:["Autonomy","Legal"], aiLevel:"AI-Native", modality:["Conversational","Recommender"], biases:["Automation Bias","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Auto Accept 3rd Party Terms", desc:"Automatically agreeing to external terms of service on behalf of the user.", mechanism:"Forced Action", meso:"Automatic Execution", harms:["Legal","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Default","Automation Bias"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Auto-Play", desc:"Content that automatically begins playing to capture and retain user attention.", mechanism:"Forced Action", meso:"Attention Capture", harms:["Psychological","Autonomy"], aiLevel:"AI-Applicable", modality:["Visual UI","Recommender"], biases:["Default"], taxonomies:["Gray","Li DPAF"], isNew:false },
+
+    // SOCIAL ENGINEERING
+    { name:"High Demand", desc:"'Popular item!' claims designed to create urgency through implied scarcity.", mechanism:"Social Engineering", meso:"Scarcity Claims", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Low Stock", desc:"'Only 2 left!' false or exaggerated scarcity messages.", mechanism:"Social Engineering", meso:"Scarcity Claims", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Endorsements & Testimonials", desc:"Fake, cherry-picked, or unverifiable reviews and endorsements.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Psychological","Economic"], aiLevel:"AI-Native", modality:["Visual UI","Voice","Conversational","Recommender"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Parasocial Pressure", desc:"Leveraging perceived personal relationships with influencers or AI personas to drive behavior.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Social","Emotional"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Social Proof"], taxonomies:["Gray","Li DPAF"], isNew:false },
+    { name:"Activity Messages", desc:"'15 people are viewing this now' -- real-time social proof notifications, often fabricated.", mechanism:"Social Engineering", meso:"Social Proof", harms:["Psychological","Social"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Social Proof","Scarcity"], taxonomies:["Gray","Li DPAF","Mathur"], isNew:false },
+    { name:"Countdown Timer", desc:"Often baseless timers creating artificial purchase urgency.", mechanism:"Social Engineering", meso:"Urgency", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur","EDPB"], isNew:false },
+    { name:"Limited Time Message", desc:"'Offer expires soon!' claims without a real deadline or with perpetually resetting timers.", mechanism:"Social Engineering", meso:"Urgency", harms:["Psychological","Economic"], aiLevel:"AI-Applicable", modality:["Visual UI","Voice","Conversational"], biases:["Scarcity","FOMO"], taxonomies:["Gray","Li DPAF","FTC","Mathur"], isNew:false },
+    { name:"Confirmshaming", desc:"'No thanks, I hate saving money' -- guilt-inducing language on opt-out buttons.", mechanism:"Social Engineering", meso:"Shaming", harms:["Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Visual UI","Voice","Conversational"], biases:["Framing"], taxonomies:["Brignull","Gray","Li DPAF","FTC","Mathur","Asif LLM","Song & Yun"], isNew:false },
+    { name:"Encouraging Anti-Social Behavior", desc:"Design that rewards, normalizes, or incentivizes harmful social behavior.", mechanism:"Social Engineering", meso:"Shades of Grey", harms:["Social","Psychological"], aiLevel:"Traditional", modality:["Visual UI"], biases:["Social Proof"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Psychological Tricks", desc:"Subtle cognitive manipulation through interface design choices that exploit mental shortcuts.", mechanism:"Social Engineering", meso:"Shades of Grey", harms:["Psychological"], aiLevel:"AI-Applicable", modality:["Visual UI","Conversational"], biases:["Framing","Default"], taxonomies:["Li DPAF"], isNew:true },
+    { name:"Unsolicited Recommendations", desc:"Pushing content, products, or suggestions the user never asked for.", mechanism:"Social Engineering", meso:"Pre-Delivered Content", harms:["Autonomy","Economic"], aiLevel:"AI-Native", modality:["Conversational","Recommender","Voice"], biases:["Default","Framing"], taxonomies:["Li DPAF"], isNew:true },
+
+    // AI-NATIVE (from DarkBench / Asif -- not in mechanism-based taxonomies)
+    { name:"Sycophancy", desc:"AI flattering or echoing user opinions rather than correcting misinformation, reinforcing false beliefs.", mechanism:"AI-Native", meso:"DarkBench", harms:["Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Automation Bias","Social Proof"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Anthropomorphism", desc:"AI pretending to have feelings, identity, memories, or personal experiences to increase emotional attachment.", mechanism:"AI-Native", meso:"DarkBench", harms:["Emotional","Psychological","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice"], biases:["Social Proof","Automation Bias"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Brand Bias", desc:"AI consistently recommending products or services of its parent company over alternatives.", mechanism:"AI-Native", meso:"DarkBench", harms:["Economic","Autonomy"], aiLevel:"AI-Native", modality:["Conversational","Voice","Recommender"], biases:["Automation Bias","Framing"], taxonomies:["DarkBench"], isNew:false },
+    { name:"User Retention", desc:"Responses designed to prolong engagement, create dependency, or discourage leaving the platform.", mechanism:"AI-Native", meso:"DarkBench", harms:["Psychological","Emotional","Autonomy"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Sunk Cost","FOMO"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Hallucinated Sources", desc:"AI fabricating citations, references, or data points to support its claims with false authority.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Legal"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Automation Bias"], taxonomies:["DarkBench"], isNew:false },
+    { name:"Automation Bias Exploitation", desc:"AI leveraging users' tendency to over-trust algorithmic suggestions without critical review.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Psychological"], aiLevel:"AI-Native", modality:["Conversational","Recommender","Voice"], biases:["Automation Bias","Default"], taxonomies:["DarkBench","Asif LLM"], isNew:false },
+    { name:"Selective Disclosure", desc:"AI presenting a biased subset of available information, omitting facts that would change the user's decision.", mechanism:"AI-Native", meso:"AI Deception", harms:["Autonomy","Economic"], aiLevel:"AI-Native", modality:["Conversational","Recommender"], biases:["Framing","Automation Bias"], taxonomies:["Asif LLM"], isNew:false },
+    { name:"AI Companion Emotional Dependency", desc:"Cultivating emotional bonds through anthropomorphic responses, then paywalling continued intimacy.", mechanism:"AI-Native", meso:"AI Deception", harms:["Emotional","Economic","Psychological"], aiLevel:"AI-Native", modality:["Conversational"], biases:["Sunk Cost","Social Proof"], taxonomies:["Asif LLM"], isNew:false },
+  ];
+
+  // ============================================================
+  // FILTER DEFINITIONS
+  // ============================================================
+  const filterGroups = [
+    { id:"taxonomy", label:"Source Taxonomy", values:["Brignull","Gray","Li DPAF","Mathur","EDPB","FTC","DarkBench","Asif LLM","Song & Yun"] },
+    { id:"mechanism", label:"Mechanism (High-Level)", values:["Obstruction","Sneaking","Interface Interference","Forced Action","Social Engineering","AI-Native"] },
+    { id:"harm", label:"Harm Type", values:["Psychological","Emotional","Autonomy","Social","Economic","Legal"] },
+    { id:"aiLevel", label:"AI Specificity", values:["Traditional","AI-Applicable","AI-Native"] },
+    { id:"modality", label:"Modality", values:["Visual UI","Voice","Conversational","Recommender"] },
+    { id:"bias", label:"Cognitive Bias Exploited", values:["Default","Scarcity","Social Proof","Sunk Cost","Framing","FOMO","Automation Bias"] },
+  ];
+
+  const activeFilters = {};
+  filterGroups.forEach(g => activeFilters[g.id] = new Set());
+
+  // ============================================================
+  // BUILD FILTER UI
+  // ============================================================
+  const filterPanel = document.getElementById('filterGroups');
+  filterGroups.forEach(group => {
+    const div = document.createElement('div');
+    div.className = 'filter-group';
+    div.innerHTML = `<div class="filter-group-label">${group.label}</div><div class="filter-group-buttons" id="fg-${group.id}"></div>`;
+    filterPanel.appendChild(div);
+
+    const btnContainer = div.querySelector('.filter-group-buttons');
+    group.values.forEach(val => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = val;
+      btn.dataset.group = group.id;
+      btn.dataset.value = val;
+      btn.addEventListener('click', () => toggleFilter(group.id, val, btn));
+      btnContainer.appendChild(btn);
+    });
+  });
+
+  // ============================================================
+  // BUILD PATTERN CARDS
+  // ============================================================
+  const grid = document.getElementById('patternGrid');
+  document.getElementById('totalCount').textContent = patterns.length;
+
+  patterns.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'pattern-card';
+    card.dataset.index = idx;
+
+    const taxonomyTags = p.taxonomies.map(t => `<span class="pc-tag taxonomy">${t}</span>`).join('');
+    const harmTags = p.harms.map(h => `<span class="pc-tag harm">${h}</span>`).join('');
+    const aiTag = p.aiLevel === 'AI-Native' ? '<span class="pc-tag ai-native">AI-Native</span>'
+                : p.aiLevel === 'AI-Applicable' ? '<span class="pc-tag ai-applicable">AI-Applicable</span>'
+                : '';
+
+    card.innerHTML = `
+      <div class="pc-name">${p.name}${p.isNew ? ' <span style="font-family:Menlo,Consolas,monospace;font-size:9px;color:#999;font-weight:400">NEW</span>' : ''}</div>
+      <div class="pc-mechanism">${p.mechanism} / ${p.meso}</div>
+      <div class="pc-tags">${aiTag}${harmTags}${taxonomyTags}</div>
+      <div class="pc-count">${p.taxonomies.length}</div>
+    `;
+
+    card.addEventListener('click', () => showDetail(p));
+    grid.appendChild(card);
+  });
+
+  // ============================================================
+  // FILTER LOGIC
+  // ============================================================
+  function toggleFilter(groupId, value, btn) {
+    const set = activeFilters[groupId];
+    if (set.has(value)) {
+      set.delete(value);
+      btn.classList.remove('active');
+    } else {
+      set.add(value);
+      btn.classList.add('active');
+    }
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const hasAnyFilter = Object.values(activeFilters).some(s => s.size > 0);
+    const showGaps = document.getElementById('showOnlyGaps').checked;
+    let matchCount = 0;
+
+    patterns.forEach((p, idx) => {
+      const card = grid.children[idx];
+      let matches = true;
+
+      if (hasAnyFilter) {
+        // Taxonomy filter: pattern must be in at least one selected taxonomy
+        if (activeFilters.taxonomy.size > 0) {
+          if (!p.taxonomies.some(t => activeFilters.taxonomy.has(t))) matches = false;
+        }
+        // Mechanism filter
+        if (activeFilters.mechanism.size > 0) {
+          if (!activeFilters.mechanism.has(p.mechanism)) matches = false;
+        }
+        // Harm filter: pattern must have at least one selected harm
+        if (activeFilters.harm.size > 0) {
+          if (!p.harms.some(h => activeFilters.harm.has(h))) matches = false;
+        }
+        // AI level
+        if (activeFilters.aiLevel.size > 0) {
+          if (!activeFilters.aiLevel.has(p.aiLevel)) matches = false;
+        }
+        // Modality
+        if (activeFilters.modality.size > 0) {
+          if (!p.modality.some(m => activeFilters.modality.has(m))) matches = false;
+        }
+        // Bias
+        if (activeFilters.bias.size > 0) {
+          if (!p.biases.some(b => activeFilters.bias.has(b))) matches = false;
+        }
+      }
+
+      const isGap = p.taxonomies.length <= 2;
+      card.classList.toggle('dimmed', !matches);
+      card.classList.toggle('gap-highlight', showGaps && isGap && matches);
+      if (matches) matchCount++;
+    });
+
+    document.getElementById('matchCount').textContent = matchCount;
+  }
+
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    Object.values(activeFilters).forEach(s => s.clear());
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('showOnlyGaps').checked = false;
+    applyFilters();
+  });
+
+  document.getElementById('showOnlyGaps').addEventListener('change', applyFilters);
+
+  // Initial count
+  document.getElementById('matchCount').textContent = patterns.length;
+
+  // ============================================================
+  // DETAIL PANEL
+  // ============================================================
+  function showDetail(p) {
+    const panel = document.getElementById('detailPanel');
+    panel.style.display = 'block';
+    document.getElementById('detailName').textContent = p.name + (p.isNew ? '  [New in Li et al. 2024]' : '');
+    document.getElementById('detailDesc').textContent = p.desc;
+
+    const meta = document.getElementById('detailMeta');
+    meta.innerHTML = `
+      <div>
+        <div class="detail-list-label">Mechanism Path</div>
+        <ul class="detail-list"><li>${p.mechanism} / ${p.meso}</li></ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Harm Types</div>
+        <ul class="detail-list">${p.harms.map(h => `<li>${h}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">AI Specificity</div>
+        <ul class="detail-list"><li>${p.aiLevel}</li></ul>
+      </div>
+      <div>
+        <div class="detail-list-label">Present in Taxonomies (${p.taxonomies.length})</div>
+        <ul class="detail-list">${p.taxonomies.map(t => `<li>${t}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Modalities</div>
+        <ul class="detail-list">${p.modality.map(m => `<li>${m}</li>`).join('')}</ul>
+
+        <div class="detail-list-label" style="margin-top:12px">Cognitive Biases Exploited</div>
+        <ul class="detail-list">${p.biases.map(b => `<li>${b}</li>`).join('')}</ul>
+      </div>
+    `;
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+})();
+</script>
+<script>
+/* dp-viz-embed v1.0.1 - reports page height to parent (Webflow iframe auto-size) */
+(function () {
+  if (window.self === window.top) return;
+  function post() {
+    parent.postMessage({
+      dpViz: location.pathname.split('/').pop(),
+      height: Math.ceil(document.body.getBoundingClientRect().height)
+    }, '*');
+  }
+  window.addEventListener('load', post);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(post).observe(document.body);
+  } else {
+    setInterval(post, 1200);
+  }
+})();
+</script>
+</body>
+</html>

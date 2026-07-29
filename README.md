@@ -11,12 +11,10 @@ Embedded via iframe on the project detail page at
 
 | Page | File | Contents |
 |------|------|----------|
-| Index | `index.html` | Landing list of the three visualizations |
-| 01 — Evaluation | `evaluation.html` | Critical analysis of 10 classification frameworks with scoring rubrics |
-| 02 — Explorer | `explorer.html` | Interactive treemap + sunburst explorer (D3 v7), 68 pattern types |
-| 03 — Cross-Taxonomy | `taxonomy.html` | Cross-taxonomy mapping by mechanism, harm, and AI specificity |
+| 01 — Taxonomy Map | `taxonomy-map.html` | Interactive filterable map of every dark pattern in the corpus, annotated by taxonomy, mechanism, harm, AI-specificity, modality, and cognitive bias |
+| 02 — Evolution | `taxonomy-evolution.html` | Timeline of how dark pattern taxonomies evolved from web interface tricks to AI-specific frameworks |
 
-All pages are self-contained (only `explorer.html` loads D3 from the d3js.org CDN).
+All pages are self-contained (no external dependencies).
 Each page includes a `postMessage` snippet that reports its height to the parent
 window so the embedding site can auto-size the iframe.
 

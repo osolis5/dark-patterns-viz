@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxonomy Evolution</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: #ddd;
+    --border-strong: #ccc;
+    --text: #000000;
+    --text-secondary: #555555;
+    --text-tertiary: #999999;
+    --row-alt: #fafafa;
+    --obstruction: #c23b22;
+    --sneaking: #d4930d;
+    --interface: #2563a8;
+    --forced: #7c3aad;
+    --social: #0e8a63;
+    --nagging: #b83280;
+    --ai-specific: #0b7285;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .hero {
+    padding: 80px 40px 48px;
+    text-align: left;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .hero .subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    max-width: 720px;
+    line-height: 1.6;
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: left;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--text);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .section-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+    line-height: 1.6;
+    max-width: 800px;
+    font-weight: 300;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding: 24px 0;
+  }
+
+  .timeline-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+    transform: translateX(-50%);
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .timeline-item:nth-child(odd) {
+    flex-direction: row;
+    padding-right: calc(50% + 30px);
+    text-align: right;
+  }
+
+  .timeline-item:nth-child(even) {
+    flex-direction: row-reverse;
+    padding-left: calc(50% + 30px);
+    text-align: left;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    width: 8px;
+    height: 8px;
+    background: var(--text);
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    max-width: 500px;
+  }
+
+  .timeline-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .timeline-year {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+
+  .timeline-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .timeline-detail {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  .timeline-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    margin-top: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: transparent;
+  }
+
+  .tag-foundational { border-color: var(--text-tertiary); color: var(--text-secondary); }
+  .tag-hci { border-color: var(--social); color: var(--social); }
+  .tag-ai { border-color: var(--ai-specific); color: var(--ai-specific); }
+  .tag-regulatory { border-color: var(--sneaking); color: var(--sneaking); }
+  .tag-empirical { border-color: var(--nagging); color: var(--nagging); }
+
+  /* Three Axes */
+  .axes-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .axis-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+  }
+
+  .axis-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+
+  .axis-card.mechanism::before { background: var(--obstruction); }
+  .axis-card.harm::before { background: var(--forced); }
+  .axis-card.ai-behavior::before { background: var(--ai-specific); }
+
+  .axis-icon {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 400;
+  }
+
+  .axis-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .axis-source {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  .axis-items {
+    list-style: none;
+  }
+
+  .axis-items li {
+    font-size: 0.82rem;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .axis-items li:last-child {
+    border-bottom: none;
+  }
+
+  .axis-dot {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Ontology */
+  .ontology-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+
+  .ontology-column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .ontology-header {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    color: var(--text);
+  }
+
+  .ontology-header .count {
+    display: block;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .ontology-header.obstruction { border-top: 2px solid var(--obstruction); background: transparent; color: var(--text); }
+  .ontology-header.sneaking { border-top: 2px solid var(--sneaking); background: transparent; color: var(--text); }
+  .ontology-header.interface { border-top: 2px solid var(--interface); background: transparent; color: var(--text); }
+  .ontology-header.forced { border-top: 2px solid var(--forced); background: transparent; color: var(--text); }
+  .ontology-header.social { border-top: 2px solid var(--social); background: transparent; color: var(--text); }
+
+  .meso-group {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .meso-group:last-child { border-bottom: none; }
+
+  .meso-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    padding-left: 8px;
+    border-left: 2px solid;
+    color: var(--text);
+  }
+
+  .meso-label.obstruction { border-color: var(--obstruction); }
+  .meso-label.sneaking { border-color: var(--sneaking); }
+  .meso-label.interface { border-color: var(--interface); }
+  .meso-label.forced { border-color: var(--forced); }
+  .meso-label.social { border-color: var(--social); }
+
+  .low-level {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    padding: 3px 0 3px 16px;
+    position: relative;
+    font-weight: 300;
+  }
+
+  .low-level::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 4px;
+    height: 1px;
+    background: var(--text-tertiary);
+    transform: translateY(-50%);
+  }
+
+  .low-level.new-pattern {
+    color: var(--ai-specific);
+  }
+
+  .low-level.new-pattern::before {
+    background: var(--ai-specific);
+  }
+
+  .new-badge {
+    font-size: 0.6rem;
+    background: transparent;
+    color: var(--ai-specific);
+    padding: 1px 5px;
+    border: 1px solid var(--ai-specific);
+    margin-left: 4px;
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  /* Cross-Taxonomy Matrix */
+  .matrix-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    min-width: 900px;
+  }
+
+  .matrix-table th {
+    background: var(--row-alt);
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-strong);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    color: var(--text);
+    font-size: 0.72rem;
+  }
+
+  .matrix-table th:first-child {
+    text-align: left;
+    padding-left: 16px;
+    min-width: 200px;
+  }
+
+  .matrix-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+
+  .matrix-table td:first-child {
+    text-align: left;
+    padding-left: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .matrix-table tr:nth-child(even) td {
+    background: var(--row-alt);
+  }
+
+  .matrix-table tr:hover td {
+    background: #f0f0f0;
+  }
+
+  .cell-present {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+  }
+
+  .cell-present.filled {
+    background: var(--text);
+  }
+
+  .cell-present.partial {
+    background: var(--text-tertiary);
+  }
+
+  .cell-present.empty {
+    background: #eee;
+  }
+
+  /* AI-Specific Patterns */
+  .ai-patterns-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .ai-framework {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-top: 2px solid var(--ai-specific);
+  }
+
+  .ai-framework-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .ai-framework-source {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  .ai-pattern-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .ai-pattern-item:last-child { border-bottom: none; }
+
+  .ai-pattern-num {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.75rem;
+    color: var(--ai-specific);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--ai-specific);
+  }
+
+  .ai-pattern-name {
+    font-weight: 500;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+    color: var(--text);
+  }
+
+  .ai-pattern-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  /* Harm Mapping */
+  .harm-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .harm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+    text-align: left;
+  }
+
+  .harm-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .harm-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+    font-weight: 400;
+  }
+
+  .harm-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .harm-examples {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  /* Vulnerable Populations */
+  .vuln-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .vuln-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+
+  .vuln-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .vuln-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .vuln-detail {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  /* Pattern Frequency Bars */
+  .freq-bar-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .freq-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 0;
+  }
+
+  .freq-label {
+    width: 200px;
+    font-size: 0.78rem;
+    text-align: right;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .freq-bar-track {
+    flex: 1;
+    height: 16px;
+    background: #f0f0f0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .freq-bar-fill {
+    height: 100%;
+    transition: width 1s ease-out;
+    position: relative;
+  }
+
+  .freq-count {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    width: 50px;
+    text-align: right;
+  }
+
+  /* Key Insights */
+  .insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+  }
+
+  .insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--text);
+  }
+
+  .insight-num {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+
+  .insight-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .insight-text {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .insight-text strong {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Domain Cards */
+  .domain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .domain-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .domain-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  .domain-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  .domain-patterns {
+    list-style: none;
+  }
+
+  .domain-patterns li {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    padding-left: 14px;
+    position: relative;
+    font-weight: 300;
+  }
+
+  .domain-patterns li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 1px;
+    background: var(--text-tertiary);
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .ontology-grid { grid-template-columns: repeat(3, 1fr); }
+    .harm-grid { grid-template-columns: repeat(4, 1fr); }
+    .axes-container { grid-template-columns: 1fr; }
+    .vuln-grid { grid-template-columns: repeat(2, 1fr); }
+    .ai-patterns-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .hero { padding: 48px 24px 32px; }
+    .hero h1 { font-size: 1.8rem; }
+    .container { padding: 32px 24px; }
+    .stats-bar { gap: 24px; }
+    .ontology-grid { grid-template-columns: 1fr; }
+    .harm-grid { grid-template-columns: repeat(2, 1fr); }
+    .timeline-item:nth-child(odd),
+    .timeline-item:nth-child(even) {
+      flex-direction: column;
+      padding: 0 0 0 40px;
+      text-align: left;
+    }
+    .timeline-line { left: 15px; }
+    .timeline-dot { left: 15px; }
+    .domain-grid { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Scroll animations */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .footnote {
+    text-align: left;
+    padding: 40px;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    border-top: 1px solid var(--border);
+    margin-top: 64px;
+    line-height: 1.7;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: 300;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    color: var(--text);
+    max-width: 280px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-weight: 300;
+  }
+
+  .tooltip.show { opacity: 1; }
+
+  /* Harm card highlight */
+  .harm-card.highlight {
+    border-color: var(--border-strong);
+  }
+
+  .harm-card.highlight .harm-name {
+    color: var(--text);
+  }
+
+  .harm-card.highlight .harm-examples {
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">01</span>
+      <h2>Taxonomy Evolution</h2>
+    </div>
+    <p class="section-desc">How dark pattern taxonomies have evolved from web-based interface tricks to AI-specific behavioral manipulation frameworks, each building on predecessors.</p>
+
+    <div class="timeline">
+      <div class="timeline-line"></div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2010</div>
+          <div class="timeline-title">Brignull &mdash; Foundational Taxonomy</div>
+          <div class="timeline-detail">Coined "dark patterns." 12 types including Trick Questions, Roach Motel, Confirmshaming, Forced Continuity. Focused on web UI deception.</div>
+          <span class="timeline-tag tag-foundational">foundational</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2016</div>
+          <div class="timeline-title">Bosch et al. &mdash; Privacy Dark Strategies</div>
+          <div class="timeline-detail">8 dark strategies antagonizing privacy-by-design: Maximize, Publish, Centralize, Preserve, Obscure, Deny, Violate, Fake.</div>
+          <span class="timeline-tag tag-hci">privacy</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2018</div>
+          <div class="timeline-title">Gray et al. &mdash; 5 Strategy Categories</div>
+          <div class="timeline-detail">Landmark HCI consolidation: Nagging, Obstruction, Sneaking, Interface Interference, Forced Action. Became the dominant organizing framework.</div>
+          <span class="timeline-tag tag-hci">HCI landmark</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2019</div>
+          <div class="timeline-title">Mathur et al. &mdash; Effect-Based Classification</div>
+          <div class="timeline-detail">Empirical study of 11,000 shopping sites. 5 effect-based categories: Asymmetric, Covert, Deceptive, Obstructive, Restrictive. Cross-references cognitive biases.</div>
+          <span class="timeline-tag tag-empirical">empirical</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2022</div>
+          <div class="timeline-title">EDPB / FTC / OECD &mdash; Regulatory Frameworks</div>
+          <div class="timeline-detail">Multiple regulatory bodies codify dark pattern categories. EDPB: Overloading, Skipping, Hindering, Fickle, Left in the Dark. FTC: 7 categories.</div>
+          <span class="timeline-tag tag-regulatory">regulatory</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2024</div>
+          <div class="timeline-title">Gray et al. &mdash; 3-Level Ontology (CHI '24)</div>
+          <div class="timeline-detail">Harmonized 10 taxonomies into 65 patterns across 3 levels: 5 high-level strategies &rarr; 25 meso-level approaches &rarr; 35 low-level instantiations.</div>
+          <span class="timeline-tag tag-hci">ontology</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2024</div>
+          <div class="timeline-title">Li et al. &mdash; 68-Type DPAF Framework</div>
+          <div class="timeline-detail">Extended Gray's ontology with 24 new patterns and 8 new subcategories from 113-paper systematic review. Adds severity ratings and scenario mapping.</div>
+          <span class="timeline-tag tag-empirical">comprehensive</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2025</div>
+          <div class="timeline-title">DarkBench (Kran) &amp; DarkPatterns-LLM (Asif)</div>
+          <div class="timeline-detail">First AI-native taxonomies. DarkBench: 6 LLM categories (sycophancy, anthropomorphism, brand bias). Asif: 7 harm types with 401 curated examples. Shift from interface to content.</div>
+          <span class="timeline-tag tag-ai">AI-native</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-year">2025</div>
+          <div class="timeline-title">Kitkowska &mdash; Hyper-Dark Patterns</div>
+          <div class="timeline-detail">Theorizes AI-personalized dark patterns that dynamically adapt to individual behavioral profiles. Traditional categories + real-time vulnerability targeting.</div>
+          <span class="timeline-tag tag-ai">AI-personalized</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+<script>
+/* dp-viz-embed v1.0.1 - reports page height to parent (Webflow iframe auto-size) */
+(function () {
+  if (window.self === window.top) return;
+  function post() {
+    parent.postMessage({
+      dpViz: location.pathname.split('/').pop(),
+      height: Math.ceil(document.body.getBoundingClientRect().height)
+    }, '*');
+  }
+  window.addEventListener('load', post);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(post).observe(document.body);
+  } else {
+    setInterval(post, 1200);
+  }
+})();
+</script>
+</body>
+</html>
